@@ -205,12 +205,12 @@ export const generateWebsite=async (req,res) => {
 
 export const getWebsiteById = async(req,res)=>{
     try{
-        const website = await Website.findOne({
-            _id:req.params.id,
-            user:req.user._id
-        })
+        const website = await Website.findById(req.params.id)
         if(!website){
             return res.status(400).json({message: 'Website not found'})
+        }
+        if(website.user.toString() !== req.user._id.toString()){
+            return res.status(403).json({message: 'Forbidden'})
         }
         return res.status(200).json(website)
     }catch(error){
@@ -224,12 +224,12 @@ export const changes = async (req,res) =>{
         if(!prompt){
             return res.status(400).json({message:"prompt is required"})
         }
-        const website = await Website.findOne({
-            _id:req.params.id,
-            user:req.user._id
-        }) 
+        const website = await Website.findById(req.params.id)
         if(!website){
             return res.status(400).json({message: 'Website not found'})
+        }
+        if(website.user.toString() !== req.user._id.toString()){
+            return res.status(403).json({message: 'Forbidden'})
         }
         const user= await User.findById(req.user._id)
         console.log(user)
@@ -296,4 +296,4 @@ export const getAll = async (req,res)=>{
     } catch (error) {
          return res.status(500).json({message: `Get all website error ${error}`})
     }
-    }
+}

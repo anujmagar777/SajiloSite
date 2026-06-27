@@ -37,6 +37,11 @@ function WebsiteEditor() {
     "Finalizing update...",
   ];
 
+  const formatCode = (value) =>
+    value
+      ? value.replace(/>\s*</g, ">\n<").replace(/\s{2,}/g, " ").trim()
+      : "";
+
   const handleUpdate = async () => {
     if (!prompt) return;
     setUpdateLoading(true);
@@ -52,7 +57,7 @@ function WebsiteEditor() {
       console.log(result);
       setUpdateLoading(false);
       setMessages((m) => [...m, { role: "ai", content: result.data.message }]);
-      setCode(result.data.code);
+      setCode(formatCode(result.data.code));
     } catch (error) {
       setUpdateLoading(false);
       console.log(error);
@@ -77,7 +82,7 @@ function WebsiteEditor() {
         console.log(result);
         setWebsite(result.data);
 
-        setCode(result.data.latestCode);
+        setCode(formatCode(result.data.latestCode));
         setMessages(result.data.conversation);
       } catch (error) {
         console.log(error);
@@ -272,7 +277,7 @@ function WebsiteEditor() {
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            className="fixed inset-y-0 right-0 w-full lg:w-[45%] x-[9999] bg-[#1e1e1e] flex flex-col"
+            className="fixed inset-y-0 right-0 z-[9999] w-full lg:w-[45%] bg-[#1e1e1e] flex flex-col"
           >
             <div className="h-12 px-4 flex justify-between items-center border-b border-white/10 bg-[#1e1e1e]">
               <span className="text-sm font-medium">index.html</span>
@@ -280,12 +285,24 @@ function WebsiteEditor() {
                 <X size={18} />
               </button>
             </div>
-            <Editor
-              theme="vs-dark"
-              value={code}
-              language="html"
-              onChange={(v) => setCode(v)}
-            />
+            <div className="flex-1 min-h-0">
+              <Editor
+                height="100%"
+                width="100%"
+                theme="vs-dark"
+                value={code}
+                language="html"
+                onChange={(v) => setCode(v || "")}
+                options={{
+                  automaticLayout: true,
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  wordWrap: "on",
+                  lineNumbers: "on",
+                  fontSize: 14,
+                }}
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
