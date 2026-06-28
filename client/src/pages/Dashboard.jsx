@@ -1,10 +1,11 @@
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Rocket, Share2 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { serverUrl } from '../App'
+import { buildSrcDoc } from '../utils/srcdoc'
 
 function Dashboard() {
   const {userData} = useSelector(state => state.user)
@@ -12,6 +13,24 @@ function Dashboard() {
   const [websites, setWebsites] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [copiedId, setCopiedId] = useState(null)
+
+const handleDeploy = async (websiteId) => {
+  try {
+    const result = await axios.get(`${serverUrl}/api/website/deploy/${id}`, { withCredentials: true })
+    window.open('${{result.data.url}', '_blank')
+    setWebsites((prev)=>
+      prev.map((w)=>
+      w._id===id
+  ?{...w, deployed:true, deployedUrl:result.data.url}
+  :w
+      ));
+    
+  } catch (error) {
+    console.log(error)
+  }
+}
+
   useEffect(()=>{
     const handleGetAllWebsites = async () => {
       try {
@@ -27,6 +46,13 @@ function Dashboard() {
       }}
       handleGetAllWebsites()
   },[])
+
+const handleCopy=async (site)=>{
+  await navigator.clipboard.writeText(site.deployedUrl)
+  setCopiedId(site._id)
+  setTimeout(()=>setCopiedId(null), 2000)
+}
+ 
   return (
     <div className='min-h-screen bg-black text-white'>
       <div className='sticky top-0 z-40 bg-black/50 backdrop-blur-xl p-4 text-2xl font-bold border-b border-white/10'>
@@ -61,26 +87,28 @@ function Dashboard() {
           )}
           {!loading && !error && websites.length>0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
-            {websites.map((w, i)=>(
-              <motion.div
+            {websites.map((w, i)=>{
+              const copied = copiedId === w._id
+              return<motion.div
               key={w._id || i}
-              initial={{opacity:0, y:20}}
+              initial={{opacity:0, y:20}} 
               animate={{opacity:1, y:0}}
               transition={{delay: i*0.05}}
               whileHover={{y: -6}}
-              className="overflow-hidden rounded-[24px] border border-white/10 bg-[#101010] shadow-[0_20px_60px_rgba(0,0,0,0.35)] transition hover:border-white/20 hover:bg-[#141414]"
+             
+              className="overflow-hidden rounded-3xl border border-white/10 bg-[#101010] shadow-[0_20px_60px_rgba(0,0,0,0.35)] transition hover:border-white/20 hover:bg-[#141414]"
               >
               <button
                 className="block w-full text-left"
                 onClick={() => navigate(`/editor/${w._id}`)}
                 type="button"
               >
-                <div className="relative h-[175px] bg-[#d9d9d9] overflow-hidden border-b border-black/10">
+                <div className="relative h-43.75 bg-[#d9d9d9] overflow-hidden border-b border-black/10">
                   <iframe
                     title={w.title || 'Website preview'}
-                    srcDoc={w.latestCode || ''}
+                    srcDoc={buildSrcDoc(w.latestCode || '')}
                     className="absolute inset-0 h-[150%] w-[150%] scale-[0.65] origin-top-left pointer-events-none bg-white"
-                    sandbox="allow-scripts allow-forms allow-popups allow-same-origin"
+                    sandbox="allow-scripts allow-forms allow-popups"
                   />
                 </div>
               </button>
@@ -95,21 +123,44 @@ function Dashboard() {
                       Last updated {w.updatedAt ? new Date(w.updatedAt).toLocaleDateString() : 'recently'}
                     </p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium ${w.deployed ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/10 text-zinc-300'}`}>
-                    {w.deployed ? 'Deployed' : 'Draft'}
-                  </span>
-                </div>
-
-                <button
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-violet-500 to-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:scale-[1.01]"
-                  onClick={() => navigate(`/editor/${w._id}`)}
-                  type="button"
-                >
-                  <span>Deploy</span>
-                </button>
+                  </div>
+ {w.deployed ? (
+  <motion.button
+    whileTap={{ scale: 0.95 }}
+    onClick={() => handleCopy(w)}
+    className={`mt-auto flex w-full items-center justify-center gap-2
+      rounded-xl px-4 py-2 text-sm font-medium transition-all
+      ${
+        copied
+          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+          : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
+      }`}
+  >
+    {copied ? (
+      <>
+      <Check/>
+      Link Copied
+      </> 
+    ):
+    <>
+    <Share2 size={14}/>
+    Share Link
+    </>
+    }
+  </motion.button>
+) : (
+  <button
+    className="mt-auto flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-500 to-purple-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:scale-[1.01]"
+    onClick={() => handleDeploy(w._id)}
+    type="button"
+  >
+    <Rocket size={18} />
+    <span>Deploy</span>
+  </button>
+)}
               </div>
               </motion.div>
-            ))}
+})}
           </div>
           )
           }

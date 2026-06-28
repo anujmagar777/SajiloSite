@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Editor from "@monaco-editor/react";
+import { sanitizeSrcDoc } from "../utils/srcdoc";
+
 
 function WebsiteEditor() {
   const { id } = useParams();
@@ -63,6 +65,18 @@ function WebsiteEditor() {
       console.log(error);
     }
   };
+
+const handleDeploy = async () => {
+  try {
+    const result = await axios.get(`${serverUrl}/api/website/deploy/${website._id}`, { withCredentials: true })
+    window.open(result.data.url, "_blank");
+
+
+  } catch (error) {
+    console.log(error)
+  }
+}
+
   useEffect(() => {
     if (!updateLoading) return;
     const i = setInterval(() => {
@@ -94,7 +108,8 @@ function WebsiteEditor() {
 
   useEffect(() => {
     if (!iframeRef.current || !code) return;
-    const blob = new Blob([code], { type: "text/html" });
+    const previewCode = sanitizeSrcDoc(code)
+    const blob = new Blob([previewCode], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     iframeRef.current.src = url;
     return () => URL.revokeObjectURL(url);
@@ -183,9 +198,13 @@ function WebsiteEditor() {
         <div className="h-14 px-4 flex justify-between items-center border-b border-white/10 bg-black/80">
           <span className="text-xs text-zinc-400">Live Preview </span>
           <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-linear-to-r from-indigo-500 to-purple-500 text-sm font-semibold hover:scale-105 transition">
-              Deploy
-            </button>
+            {website.deployed ?"":
+            <button className="flex items-center gap-2 px-4 py-1.5 rounded-lg 
+            bg-linear-to-r from-indigo-500 to-purple-500 text-sm font-semibold 
+            hover:scale-105 transition"
+            onClick={handleDeploy}>
+            Deploy
+            </button>}
 
             <button className="p-2 lg:hidden" onClick={() => setShowChat(true)}>
               <MessageSquare size={18} />
@@ -199,7 +218,8 @@ function WebsiteEditor() {
           </div>
         </div>
 
-        <iframe ref={iframeRef} className="flex-1 w-full bg-white"></iframe>
+        <iframe ref={iframeRef} title="Editor preview" sandbox='allow-scripts allow-same-origin allow-forms'
+         className="flex-1 w-full bg-white"/>
       </div>
 
       <AnimatePresence>
@@ -310,7 +330,8 @@ function WebsiteEditor() {
       <AnimatePresence>
         {showFullPreview && (
           <motion.div className="fixed inset-0 z-9999 bg-black">
-            <iframe className="w-full h-full bg-white" srcDoc={code} />
+            <iframe title="Full preview" className="w-full h-full bg-white" srcDoc={sanitizeSrcDoc(code)}
+            sandbox='allow-scripts allow-same-origin allow-forms' />
             <button
               onClick={() => setShowFullPreview(false)}
               className="absolute top-4 right-10 p-2 bg-black/70 rounded-lg"
@@ -323,7 +344,7 @@ function WebsiteEditor() {
     </div>
   );
 
-  function Header({onclose}) {
+  function Header({ onclose }) {
     return (
       <div className="h-14 px-4 flex items-center justify-between border-b border-white/10">
         <span className="font-semibold truncate">{website.title}</span>

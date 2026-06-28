@@ -2,6 +2,7 @@ import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
 import Generate from './pages/Generate'
+import LiveSite from './pages/LiveSite'
 import { useSelector } from 'react-redux'
 import useGetCurrentUser from './hooks/useGetCurrentUser'
 import WebsiteEditor from './pages/Editor'
@@ -20,6 +21,7 @@ function App() {
           <Route path = '/dashboard' element={userData?<Dashboard/>:<Navigate to={"/"}/>}/>
           <Route path = '/generate' element={userData?<Generate/>:<Navigate to={"/"}/>}/>
           <Route path = '/editor/:id' element={userData?<WebsiteEditor/>:<Navigate to={"/"}/>}/>
+          <Route path = '/site/:id' element={<LiveSite/>}/>
       </Routes> 
     </BrowserRouter>
 

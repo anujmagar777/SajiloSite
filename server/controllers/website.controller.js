@@ -3,6 +3,21 @@ import User from "../models/user.model.js"
 import Website from "../models/website.model.js"
 import extractJson from "../utils/extractJson.js"
 
+const fallbackImage =
+    'data:image/svg+xml;charset=UTF-8,' +
+    encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+            <rect width="1200" height="800" fill="#e5e7eb" />
+            <rect x="120" y="120" width="960" height="560" rx="32" fill="#d1d5db" />
+            <text x="600" y="412" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" fill="#6b7280">
+                Image unavailable
+            </text>
+        </svg>
+    `)
+
+const sanitizeSrcDoc = (html = '') =>
+    html.replace(/https?:\/\/via\.placeholder\.com\/[^"'\s)]+/g, fallbackImage)
+
 const masterPrompt = `
                YOU ARE A PRINCIPAL FRONTEND ARCHITECT
 AND A SENIOR UI/UX ENGINEER
@@ -182,13 +197,14 @@ export const generateWebsite=async (req,res) => {
             latestCode: parsed.code,
             conversation: [
                 {
+                    role: 'user',
+                    content: prompt
+                },
+                {
                     role: 'ai',
                     content: parsed.message
                 },
-                {
-                    role: 'user',
-                    content: prompt
-                }
+                
             ]
         })
 
@@ -292,8 +308,61 @@ export const changes = async (req,res) =>{
 export const getAll = async (req,res)=>{
     try {
         const websites = await Website.find({user:req.user._id})
-        return res.status(200).json(websites)
+        const sanitizedWebsites = websites.map((website) => ({
+            ...website.toObject(),
+            latestCode: sanitizeSrcDoc(website.latestCode || '')
+        }))
+        return res.status(200).json(sanitizedWebsites)
     } catch (error) {
          return res.status(500).json({message: `Get all website error ${error}`})
+    }
+}
+
+
+export const deploy=async (req,res)=>{
+    try{
+       const website = await Website.findOne({
+        _id: req.params.id,
+        user: req.user._id
+       })
+
+       if(!website){
+        return res.status(400).json({message:"website not found"})
+       }
+
+       if(!website.slug){
+        website.slug=website.title.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,60)+website.
+        _id.toString().slice(-5)
+       }
+
+       website.deployed=true
+       website.deployedUrl=`${process.env.FRONTEND_URL}/site/${website.slug}`
+       await website.save()
+
+       return res.status(200).json({
+        url:website.deployedUrl
+       })
+
+    }catch (error){
+        return res.status(500).json({message:`deploy website error ${error}`})
+    }
+}
+
+export async function getBySlug(req,res){
+    try{
+    const website = await Website.findOne({
+        slug: req.params.slug,
+        user: req.user._id
+       })
+
+       if(!website){
+        return res.status(400).json({message:"website not found"})
+       }
+       return res.status(200).json({
+        ...website.toObject(),
+        latestCode: sanitizeSrcDoc(website.latestCode || '')
+       })
+    } catch(error){
+        return res.status(500).json({message:`get bu slug website error ${error}`})
     }
 }
