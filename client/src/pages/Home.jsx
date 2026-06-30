@@ -21,7 +21,7 @@ function Home() {
         const {userData}    = useSelector(state => state.user)
         const dispatch = useDispatch()
         const [openProfile, setOpenProfile] = useState(false)
-
+        const [websites, setWebsites] = useState(null)
         const [user, setUser] = useState(null)
         const [authReady, setAuthReady] = useState(false)
 
@@ -138,12 +138,27 @@ function Home() {
             authAction = (
                 <button
                     className='px-4 py-2 rounded-full border border-white/20 hover:bg-white/10 text-xs'
-                    onClick={() => setOpenLogin(true)}
+                    onClick={() =>userData?navigate("/dashboard"):setOpenLogin(true)}
                 >
                     {userData?"Go to dashboard":"Get Started"}
                 </button>
             )
         }
+
+  useEffect(()=>{
+    if (!userData) return;
+    const handleGetAllWebsites = async () => {
+      try {
+        
+        const result = await axios.get(`${serverUrl}/api/website/get-all`, { withCredentials: true })
+        setWebsites(result.data|| [])
+      }catch (error) {
+        console.log(error)
+         
+      }}
+      handleGetAllWebsites()
+  },[userData])
+     
 
   return (
     <div className='relative min-h-screen bg-[#050505] text-white overflow-hidden'>
@@ -190,8 +205,7 @@ function Home() {
                 {userData ? 'Go to dashboard' : user ? 'Signed In' : 'Get Started'}
             </motion.button>
         </section>
-
-        <section className='max-w-6xl mx-auto px-6 pb-28'>
+{!userData &&  <section className='max-w-6xl mx-auto px-6 pb-28'>
             <div className = 'grid grid-cols-1 md:grid-cols-3 gap-6'>
                 {hightlights.map((h)=>(
                     <motion.div
@@ -208,8 +222,42 @@ function Home() {
                     </motion.div>
                 ))}
             </div>
-        </section>
+        </section>}
+       
 
+{userData && websites?.length>0 && (
+    <section className='max-w-7xl mx-auto px-6 pb-32'>
+        <h3 className='text-2xl font-semibold mb-6'>Your Websites</h3>
+
+        <div className='grid grid-cols-1 md:grid-cols-3  gap-6'>
+            {websites.slice(0, 3).map((w,i) => (
+                <motion.div
+                  key={w._id}
+                  whileHover={{y: -6}}
+                  onClick={() => navigate(`/editor/${w._id}`)}
+                  className='cursor-pointer rounded-2xl bg-white/5 border
+                 border-white/10 overflow-hidden '
+                >
+                    <div className='h-40 bg-black'>
+                        <iframe
+                        srcDoc={w.latestCode }
+                        className='w-[140%] h-[140%] scale-[0.72] origin-top-left pointer-events-none bg-white'
+                        />
+                    </div>
+                    <div className='p-4'>
+                        <h2 className="text-[14px] font-semibold leading-snug line-clamp-2">
+                      {w.title || 'Untitled website'}
+                    </h2>
+                    <p className="mt-1.5 text-[11px] text-zinc-400">
+                      Last updated {w.updatedAt ? new Date(w.updatedAt).toLocaleDateString() : 'recently'}
+                    </p>
+                    </div>
+                </motion.div>
+            ))}
+                
+        </div>       
+        </section>
+)}  
         <footer className = 'border-t border-white/10 py-10 text-center text-sm text-zinc-500' >
             &copy;{new Date().getFullYear()} SajiloSite
         </footer>
