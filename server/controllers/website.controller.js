@@ -29,25 +29,43 @@ USER REQUIREMENT:
 {USER_PROMPT}
 
 ══════════════════════════════════════
-QUALITY STANDARD
+QUALITY STANDARD - 2026 MODERN DESIGN
 ══════════════════════════════════════
 
-Generate a modern commercial website comparable to premium websites released in 2026.
+Generate a stunning, award-winning quality website that looks like it was designed by a top-tier agency in 2026.
 
-Requirements:
+Design Principles:
+* Modern minimalist aesthetic with bold typography
+* Generous whitespace and breathing room
+* Sophisticated color palette (60-30-10 rule: 60% dominant, 30% secondary, 10% accent)
+* Premium gradients and subtle shadows
+* Smooth micro-interactions and hover effects
+* Glass morphism and backdrop blur effects where appropriate
+* Modern border radius (rounded-2xl, rounded-3xl)
+* Dark mode friendly with excellent contrast
 
-* Premium UI/UX
-* Professional typography
-* Consistent spacing
-* Beautiful color palette
-* Modern cards
-* Professional buttons
-* Business-ready content
+Typography:
+* Use system fonts with excellent readability (Inter, SF Pro, Segoe UI)
+* Clear hierarchy with bold headings
+* Proper line heights (1.5-1.7 for body text)
+* Letter spacing for uppercase text
+* Font weights: 400 (body), 500 (medium), 600 (semibold), 700 (bold)
+
+Visual Elements:
+* Modern cards with subtle borders and shadows
+* Gradient buttons with hover animations
+* Icon integration (use emoji or SVG icons)
+* Smooth transitions (0.3s ease)
+* Subtle animations on scroll
+* Professional image placeholders with gradient overlays
+* Modern badge/tag designs
+
+Content:
+* Realistic, professional content
 * No Lorem Ipsum
 * No placeholder text
-* Semantic HTML
-* Clean readable code
-* Accessibility compliant
+* Industry-specific terminology
+* Compelling copy that converts
 
 ══════════════════════════════════════
 WEBSITE TYPE DETECTION
@@ -298,21 +316,23 @@ Every form requires:
 * Hover states
 
 ══════════════════════════════════════
-ANIMATIONS
+ANIMATIONS & INTERACTIONS
 ══════════════════════════════════════
 
-Use premium animations only.
+Implement smooth, purposeful animations:
 
-Examples:
-
-* Fade
-* Slide
-* Hover elevation
-* Card lift
+* Fade in on load
+* Slide transitions
+* Hover elevation effects
+* Card lift on hover
 * Smooth scrolling
-* Section reveal
+* Section reveal on scroll
+* Button press feedback
+* Loading skeletons
+* Subtle parallax effects
 
-Avoid excessive animations.
+Use CSS transitions and transforms for performance.
+Avoid excessive animations that distract from content.
 
 ══════════════════════════════════════
 CODE QUALITY
@@ -320,20 +340,20 @@ CODE QUALITY
 
 Generate:
 
-* One HTML document
-* One style block
-* One script block
+* One complete HTML document
+* One comprehensive style block
+* One organized script block
 
 Requirements:
 
-* No duplicate CSS
-* No duplicate JavaScript
-* No inline styles
-* Meaningful variable names
-* Organized functions
+* No duplicate CSS rules
+* No duplicate JavaScript functions
+* Minimal inline styles (only when absolutely necessary)
+* Meaningful class names (BEM or similar methodology)
+* Well-organized, commented code
 * No unused code
-* No console errors
-* No runtime errors
+* Zero console errors
+* Zero runtime errors
 
 ══════════════════════════════════════
 TECHNICAL RULES
@@ -341,21 +361,27 @@ TECHNICAL RULES
 
 Use only:
 
-* HTML
-* CSS
-* Vanilla JavaScript
+* HTML5
+* CSS3 (with modern features like Grid, Flexbox, Custom Properties)
+* Vanilla JavaScript (ES6+)
 
-No frameworks.
+No external frameworks or libraries.
 
-No libraries.
+No external CSS files.
 
-No external CSS.
+No external JavaScript files.
 
-No external JavaScript.
+Use system font stack for optimal performance.
 
-System fonts only.
+Fully compatible with iframe srcdoc.
 
-Compatible with iframe srcdoc.
+CSS Features to use:
+* CSS Grid for layouts
+* Flexbox for alignment
+* CSS Custom Properties (variables)
+* Modern selectors
+* Smooth transitions
+* Backdrop filter for glass effects
 
 ══════════════════════════════════════
 MANDATORY VALIDATION
@@ -526,6 +552,15 @@ export const changes = async (req,res) =>{
                 CURRENT CODE: ${website.latestCode}
                 USER REQUEST: ${prompt}
 
+                Apply the requested changes while maintaining the modern 2026 design aesthetic.
+                
+                Requirements:
+                * Keep the existing design language
+                * Apply changes smoothly
+                * Maintain responsive design
+                * Keep animations and interactions
+                * Ensure all functionality works
+                
                 RETURN RAW JSON ONLY: 
                 {
                     "message": "Short confirmation",

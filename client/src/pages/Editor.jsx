@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { serverUrl } from "../config";
 import {
   Code,
@@ -10,6 +10,9 @@ import {
   Monitor,
   Send,
   X,
+  Trash2,
+  Rocket,
+  Check,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Editor from "@monaco-editor/react";
@@ -18,6 +21,7 @@ import { sanitizeSrcDoc } from "../utils/srcdoc";
 
 function WebsiteEditor() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [website, setWebsite] = useState(null);
   const [error, setError] = useState("");
@@ -30,6 +34,8 @@ function WebsiteEditor() {
   const [showCode, setShowCode] = useState(false);
   const [showFullPreview, setShowFullPreview] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const thinkingSteps = [
     "Understanding your request...",
@@ -70,12 +76,29 @@ const handleDeploy = async () => {
   try {
     const result = await axios.get(`${serverUrl}/api/website/deploy/${website._id}`, { withCredentials: true })
     window.open(result.data.url, "_blank");
-
+    setWebsite(prev => ({ ...prev, deployed: true, deployedUrl: result.data.url }))
 
   } catch (error) {
     console.log(error)
   }
 }
+
+  const handleCopy = async () => {
+    if (website?.deployedUrl) {
+      await navigator.clipboard.writeText(website.deployedUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`${serverUrl}/api/website/${id}`, { withCredentials: true });
+      navigate('/dashboard');
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
     if (!updateLoading) return;
@@ -133,6 +156,7 @@ const handleDeploy = async () => {
 
   return (
     <div className="h-screen w-screen flex bg-black text-white overflow-hidden">
+      {/* Sidebar - Chat */}
       <aside className="hidden lg:flex w-95 flex-col border-r border-white/10 bg-black/80">
         <Header />
 
@@ -194,17 +218,38 @@ const handleDeploy = async () => {
         </>
       </aside>
 
+      {/* Main Content - Preview */}
       <div className="flex-1 flex flex-col">
         <div className="h-14 px-4 flex justify-between items-center border-b border-white/10 bg-black/80">
           <span className="text-xs text-zinc-400">Live Preview </span>
           <div className="flex gap-2">
-            {website.deployed ?"":
-            <button className="flex items-center gap-2 px-4 py-1.5 rounded-lg 
-            bg-linear-to-r from-indigo-500 to-purple-500 text-sm font-semibold 
-            hover:scale-105 transition"
-            onClick={handleDeploy}>
-            Deploy
-            </button>}
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-lg 
+              bg-white/10 border border-white/20 text-sm font-semibold 
+              hover:bg-white/20 transition"
+            >
+              Dashboard
+            </button>
+            {website.deployed ? (
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-lg 
+                         bg-emerald-500/20 border border-emerald-500/30 text-sm font-semibold 
+                         text-emerald-400 hover:bg-emerald-500/30 transition"
+              >
+                {copied ? <Check size={16} /> : <Check size={16} />}
+                {copied ? "Copied!" : "Link Copied"}
+              </button>
+            ) : (
+              <button className="flex items-center gap-2 px-4 py-1.5 rounded-lg 
+              bg-linear-to-r from-indigo-500 to-purple-500 text-sm font-semibold 
+              hover:scale-105 transition"
+              onClick={handleDeploy}>
+                <Rocket size={16} />
+                Deploy
+              </button>
+            )}
 
             <button className="p-2 lg:hidden" onClick={() => setShowChat(true)}>
               <MessageSquare size={18} />
@@ -215,6 +260,12 @@ const handleDeploy = async () => {
             <button className="p-2" onClick={() => setShowFullPreview(true)}>
               <Monitor size={18} />
             </button>
+            <button 
+              onClick={() => setShowDeleteModal(true)}
+              className="p-2 hover:bg-red-500/20 rounded-lg transition"
+            >
+              <Trash2 size={18} className="text-red-400" />
+            </button>
           </div>
         </div>
 
@@ -222,6 +273,7 @@ const handleDeploy = async () => {
          className="flex-1 w-full bg-white"/>
       </div>
 
+      {/* Mobile Chat Modal */}
       <AnimatePresence>
         {showChat && (
           <motion.div
@@ -291,6 +343,7 @@ const handleDeploy = async () => {
         )}
       </AnimatePresence>
 
+      {/* Code Editor Panel */}
       <AnimatePresence>
         {showCode && (
           <motion.div
@@ -327,6 +380,7 @@ const handleDeploy = async () => {
         )}
       </AnimatePresence>
 
+      {/* Full Preview Modal */}
       <AnimatePresence>
         {showFullPreview && (
           <motion.div className="fixed inset-0 z-9999 bg-black">
@@ -338,6 +392,46 @@ const handleDeploy = async () => {
             >
               <X size={18} />
             </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl p-4"
+            onClick={() => setShowDeleteModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-semibold mb-2">Delete Website?</h3>
+              <p className="text-sm text-zinc-400 mb-6">
+                This action cannot be undone. The website will be permanently removed.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-medium hover:bg-white/10 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
