@@ -279,12 +279,7 @@ function Home() {
             <section className='max-w-7xl mx-auto px-6 pb-32'>
                 <div className="flex items-center justify-between mb-6">
                     <h3 className='text-2xl font-semibold'>Your Websites</h3>
-                    <button 
-                        onClick={() => navigate('/dashboard')}
-                        className="text-sm text-zinc-400 hover:text-white transition flex items-center gap-2"
-                    >
-                        View All <ArrowRight size={16} />
-                    </button>
+                    
                 </div>
 
                 <div className='grid grid-cols-1 md:grid-cols-3  gap-6'>
