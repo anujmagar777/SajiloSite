@@ -229,7 +229,7 @@ const handleDeploy = async () => {
               bg-white/10 border border-white/20 text-sm font-semibold 
               hover:bg-white/20 transition"
             >
-              Dashboard
+              Back
             </button>
             {website.deployed ? (
               <button
