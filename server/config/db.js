@@ -5,10 +5,7 @@ const connectDb = async()=>{
         if (!process.env.MONGODB_URL) {
             throw new Error("MONGODB_URL is missing in environment variables")
         }
-        await mongoose.connect(process.env.MONGODB_URL, {
-            serverSelectionTimeoutMS: 5000,
-            connectTimeoutMS: 5000
-        })
+        await mongoose.connect(process.env.MONGODB_URL)
         console.log("db connected")
     } catch(error) {
             console.error("db error", error.message)

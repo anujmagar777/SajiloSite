@@ -316,6 +316,19 @@ Every form requires:
 * Hover states
 
 ══════════════════════════════════════
+FUNCTIONAL JAVASCRIPT & INTERACTIVITY (CRITICAL)
+══════════════════════════════════════
+
+If the requested website is an interactive application (e.g., Expense Tracker, Todo List, Calculator, Dashboard):
+
+* All buttons (Add, Delete, Edit, Update, Calculate) MUST have fully working JavaScript event listeners.
+* Forms MUST use 'e.preventDefault()', validate inputs, and actually process/save the data.
+* Data MUST be saved to and loaded from the browser's 'localStorage' so it persists on page refresh.
+* The UI MUST dynamically update (re-render) immediately when data is added, updated, or deleted.
+* Never generate "dummy" or "mock" buttons that just show an alert or do nothing. Every interactive element must perform its intended logic.
+* Calculate totals, balances, or counts dynamically based on the actual stored data array.
+
+══════════════════════════════════════
 ANIMATIONS & INTERACTIONS
 ══════════════════════════════════════
 
@@ -396,6 +409,8 @@ Before responding, internally verify:
 ✓ Every button works.
 
 ✓ Every form validates.
+
+✓ Interactive features (add, edit, delete, calculate) actually work and persist in localStorage.
 
 ✓ Every image matches the website content.
 
