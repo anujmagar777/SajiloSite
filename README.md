@@ -1,6 +1,6 @@
 # SajiloSite
 
-SajiloSite is an AI website builder that generates modern, responsive sites using OpenRouter's Deepseek model. It includes Google authentication, user sessions, and a basic generation UI. The generation flow is still under development.
+SajiloSite is an AI website builder that generates modern, responsive sites using OpenRouter's Deepseek model. It includes Google authentication, user sessions, a full generation flow, and a live editor with AI-powered chat updates.
 
 ## Tech stack
 
@@ -24,6 +24,10 @@ Backend
 - Protected routes for dashboard and generation pages
 - User session lookup via `GET /api/user/me`
 - Modern UI with Motion animations and Tailwind styling
+- AI website generation from natural language prompts
+- Live editor with AI-powered chat updates and Monaco code editor
+- One-click deployment with unique slug URLs
+- Dashboard with grid/list views, search, sort, and deploy controls
 
 ## Repository structure
 
@@ -104,9 +108,21 @@ Server (Express) in [server/package.json](server/package.json)
 
 ## API routes
 
+### Auth
 - `POST /api/auth/google` - Google login / signup
 - `GET /api/auth/logout` - Clear auth cookie
+
+### User
 - `GET /api/user/me` - Get current user (requires auth)
+
+### Website generation (all require auth)
+- `POST /api/website/generate` - Generate a website from a prompt
+- `POST /api/website/update/:id` - Update website via AI chat
+- `GET /api/website/get-by-id/:id` - Get a single website
+- `GET /api/website/get-all` - Get all user websites
+- `GET /api/website/deploy/:id` - Deploy website (generates slug URL)
+- `GET /api/website/get-by-slug/:slug` - Get a deployed website by slug (public)
+- `DELETE /api/website/:id` - Delete a website
 
 ## OpenRouter model
 
@@ -120,4 +136,4 @@ See [server/config/openRouter.js](server/config/openRouter.js) for request confi
 
 ## Project status
 
-This project is in progress. The website generation flow and schema are not finished yet.
+Complete. The full AI website generation flow — prompt-based generation, iterative chat updates, Monaco code editing, one-click deployment, and public site viewing — is implemented and functional.
