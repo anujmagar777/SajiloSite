@@ -3,11 +3,11 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { serverUrl } from "../config";
 import {
-  Code,
   Code2,
-  MessageCircle,
   MessageSquare,
   Monitor,
+  Pause,
+  Play,
   Send,
   X,
   Trash2,
@@ -30,12 +30,16 @@ function WebsiteEditor() {
   const [prompt, setPrompt] = useState("");
   const iframeRef = useRef(null);
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [analysisState, setAnalysisState] = useState("idle");
+  const [analysisProgress, setAnalysisProgress] = useState(0);
   const [thinkingIndex, setThinkingIndex] = useState(0);
   const [showCode, setShowCode] = useState(false);
   const [showFullPreview, setShowFullPreview] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const activePromptRef = useRef("");
+  const abortControllerRef = useRef(null);
 
   const thinkingSteps = [
     "Understanding your request...",
@@ -50,25 +54,79 @@ function WebsiteEditor() {
       ? value.replace(/>\s*</g, ">\n<").replace(/\s{2,}/g, " ").trim()
       : "";
 
-  const handleUpdate = async () => {
-    if (!prompt) return;
+  const pauseAnalysis = () => {
+    abortControllerRef.current?.abort();
+    setAnalysisState("paused");
+    setUpdateLoading(false);
+    setPrompt(activePromptRef.current);
+  };
+
+  const cancelAnalysis = () => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    activePromptRef.current = "";
+    setUpdateLoading(false);
+    setAnalysisState("idle");
+    setAnalysisProgress(0);
+    setThinkingIndex(0);
+    setPrompt((currentPrompt) => currentPrompt || "");
+  };
+
+  const resumeAnalysis = () => {
+    const nextPrompt = prompt.trim() || activePromptRef.current;
+    if (!nextPrompt) return;
+    handleUpdate(nextPrompt, true);
+  };
+
+  const handleUpdate = async (promptText, isResuming = false) => {
+    const nextPrompt = (promptText ?? prompt).trim();
+    if (!nextPrompt) return;
+
+    const shouldAppendUserMessage =
+      !isResuming || nextPrompt !== activePromptRef.current;
+
+    activePromptRef.current = nextPrompt;
     setUpdateLoading(true);
-    const text = prompt;
-    setPrompt("");
-    setMessages((m) => [...m, { role: "user", content: prompt }]);
+    setAnalysisState("running");
+    setAnalysisProgress((current) => (isResuming ? current : 0));
+    setError("");
+    if (!isResuming) {
+      setPrompt("");
+    }
+
+    if (shouldAppendUserMessage) {
+      setMessages((m) => [...m, { role: "user", content: nextPrompt }]);
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const result = await axios.post(
         `${serverUrl}/api/website/update/${id}`,
-        { prompt: text },
-        { withCredentials: true },
+        { prompt: nextPrompt },
+        { withCredentials: true, signal: controller.signal },
       );
       console.log(result);
+      setAnalysisProgress(100);
+      setAnalysisState("idle");
       setUpdateLoading(false);
       setMessages((m) => [...m, { role: "ai", content: result.data.message }]);
       setCode(formatCode(result.data.code));
+      activePromptRef.current = "";
     } catch (error) {
+      if (controller.signal.aborted || error.code === "ERR_CANCELED") {
+        return;
+      }
       setUpdateLoading(false);
+      setAnalysisState("idle");
+      setAnalysisProgress(0);
+      setError(error.response?.data?.message || "Something went wrong. Please try again.");
       console.log(error);
+    } finally {
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
     }
   };
 
@@ -101,13 +159,36 @@ const handleDeploy = async () => {
   };
 
   useEffect(() => {
-    if (!updateLoading) return;
+    if (analysisState !== "running") return;
+
     const i = setInterval(() => {
-      setThinkingIndex((i) => (i + 1) % thinkingSteps.length);
+      setAnalysisProgress((current) => {
+        const increment =
+          current < 20 ? Math.random() * 1.5 :
+          current < 60 ? Math.random() * 1.2 :
+          Math.random() * 0.6;
+
+        return Math.min(Math.floor(current + increment), 93);
+      });
     }, 1200);
 
     return () => clearInterval(i);
-  }, [updateLoading]);
+  }, [analysisState]);
+
+  useEffect(() => {
+    if (analysisState === "idle") {
+      setThinkingIndex(0);
+    }
+  }, [analysisState]);
+
+  useEffect(() => {
+    setThinkingIndex(
+      Math.min(
+        Math.floor((analysisProgress / 100) * thinkingSteps.length),
+        thinkingSteps.length - 1,
+      ),
+    );
+  }, [analysisProgress]);
 
   useEffect(() => {
     const handleGetWebsite = async () => {
@@ -183,10 +264,71 @@ const handleDeploy = async () => {
               </div>
             ))}
 
-            {updateLoading && (
-              <div className="max-w-[85%] mr-auto">
-                <div className="px-4 py-2.5 rounded-2xl text-xs bg-white/5 border border-white/10 text-zinc-400 italic">
-                  {thinkingSteps[thinkingIndex]}
+            {analysisState !== "idle" && (
+              <div className="max-w-[85%] mr-auto w-full">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.24em] text-zinc-500">
+                        {analysisState === "paused" ? "Paused" : "Analyzing"}
+                      </p>
+                      <p className="text-xs text-zinc-200 mt-1 leading-relaxed">
+                        {thinkingSteps[thinkingIndex]}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-semibold text-white tabular-nums">
+                        {analysisProgress}%
+                      </span>
+                      {analysisState === "running" ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={pauseAnalysis}
+                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
+                            aria-label="Pause analysis"
+                          >
+                            <Pause size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelAnalysis}
+                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition text-red-300"
+                            aria-label="Cancel analysis"
+                          >
+                            <X size={14} />
+                          </button>
+                        </>
+                      ) : analysisState === "paused" ? (
+                        <>
+                        <button
+                          type="button"
+                          onClick={resumeAnalysis}
+                          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
+                          aria-label="Resume analysis"
+                        >
+                          <Play size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelAnalysis}
+                          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition text-red-300"
+                          aria-label="Cancel analysis"
+                        >
+                          <X size={14} />
+                        </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-linear-to-r from-violet-500 to-blue-500"
+                      animate={{ width: `${analysisProgress}%` }}
+                      transition={{ ease: "easeOut", duration: 0.6 }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -197,6 +339,14 @@ const handleDeploy = async () => {
               className="flex gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
+                if (analysisState === "running") {
+                  pauseAnalysis();
+                  return;
+                }
+                if (analysisState === "paused") {
+                  resumeAnalysis();
+                  return;
+                }
                 handleUpdate();
               }}
             >
@@ -205,13 +355,19 @@ const handleDeploy = async () => {
                 className="flex-1 resize-none rounded-2xl px-4 py-3 bg-white/5 border border-white/10 text-sm outline-none"
                 onChange={(e) => setPrompt(e.target.value)}
                 value={prompt}
+                disabled={analysisState === "running"}
               />
               <button
-                className="px-4 py-3 rounded-2xl bg-white text-black"
-                disabled={updateLoading}
+                className="px-4 py-3 rounded-2xl bg-white text-black disabled:opacity-60 disabled:cursor-not-allowed"
                 type="submit"
               >
-                <Send size={14} />
+                {analysisState === "running" ? (
+                  <Pause size={14} />
+                ) : analysisState === "paused" ? (
+                  <Play size={14} />
+                ) : (
+                  <Send size={14} />
+                )}
               </button>
             </form>
           </div>
@@ -306,10 +462,71 @@ const handleDeploy = async () => {
               </div>
             ))}
 
-            {updateLoading && (
-              <div className="max-w-[85%] mr-auto">
-                <div className="px-4 py-2.5 rounded-2xl text-xs bg-white/5 border border-white/10 text-zinc-400 italic">
-                  {thinkingSteps[thinkingIndex]}
+            {analysisState !== "idle" && (
+              <div className="max-w-[85%] mr-auto w-full">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.24em] text-zinc-500">
+                        {analysisState === "paused" ? "Paused" : "Analyzing"}
+                      </p>
+                      <p className="text-xs text-zinc-200 mt-1 leading-relaxed">
+                        {thinkingSteps[thinkingIndex]}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-semibold text-white tabular-nums">
+                        {analysisProgress}%
+                      </span>
+                      {analysisState === "running" ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={pauseAnalysis}
+                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
+                            aria-label="Pause analysis"
+                          >
+                            <Pause size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelAnalysis}
+                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition text-red-300"
+                            aria-label="Cancel analysis"
+                          >
+                            <X size={14} />
+                          </button>
+                        </>
+                      ) : analysisState === "paused" ? (
+                        <>
+                        <button
+                          type="button"
+                          onClick={resumeAnalysis}
+                          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
+                          aria-label="Resume analysis"
+                        >
+                          <Play size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelAnalysis}
+                          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition text-red-300"
+                          aria-label="Cancel analysis"
+                        >
+                          <X size={14} />
+                        </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-linear-to-r from-violet-500 to-blue-500"
+                      animate={{ width: `${analysisProgress}%` }}
+                      transition={{ ease: "easeOut", duration: 0.6 }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -320,6 +537,14 @@ const handleDeploy = async () => {
               className="flex gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
+                if (analysisState === "running") {
+                  pauseAnalysis();
+                  return;
+                }
+                if (analysisState === "paused") {
+                  resumeAnalysis();
+                  return;
+                }
                 handleUpdate();
               }}
             >
@@ -328,13 +553,19 @@ const handleDeploy = async () => {
                 className="flex-1 resize-none rounded-2xl px-4 py-3 bg-white/5 border border-white/10 text-sm outline-none"
                 onChange={(e) => setPrompt(e.target.value)}
                 value={prompt}
+                disabled={analysisState === "running"}
               />
               <button
-                className="px-4 py-3 rounded-2xl bg-white text-black"
-                disabled={updateLoading}
+                className="px-4 py-3 rounded-2xl bg-white text-black disabled:opacity-60 disabled:cursor-not-allowed"
                 type="submit"
               >
-                <Send size={14} />
+                {analysisState === "running" ? (
+                  <Pause size={14} />
+                ) : analysisState === "paused" ? (
+                  <Play size={14} />
+                ) : (
+                  <Send size={14} />
+                )}
               </button>
             </form>
           </div>

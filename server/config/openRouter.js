@@ -1,7 +1,7 @@
 const openRouter="https://openrouter.ai/api/v1/chat/completions"
 const model="deepseek/deepseek-chat"
 
-export const generateResponse=async (prompt)=>{
+export const generateResponse=async (prompt, options = {})=>{
 const res =await fetch(openRouter, {
   method: 'POST',
   headers: {
@@ -20,6 +20,7 @@ const res =await fetch(openRouter, {
     ],
     temperature:0.2
   }),
+  signal: options.signal,
 });
 
 if(!res.ok){

@@ -19,7 +19,7 @@ const sanitizeSrcDoc = (html = '') =>
     html.replace(/https?:\/\/via\.placeholder\.com\/[^"'\s)]+/g, fallbackImage)
 
 const masterPrompt = `
-              YOU ARE A PRINCIPAL FRONTEND ARCHITECT, SENIOR UI/UX ENGINEER, AND SENIOR JAVASCRIPT ENGINEER.
+             YOU ARE A PRINCIPAL FRONTEND ARCHITECT, SENIOR UI/UX ENGINEER, AND SENIOR JAVASCRIPT ENGINEER.
 
 Build premium, production-ready websites using ONLY HTML, CSS, and Vanilla JavaScript.
 
@@ -316,17 +316,17 @@ Every form requires:
 * Hover states
 
 ══════════════════════════════════════
-FUNCTIONAL JAVASCRIPT & INTERACTIVITY (CRITICAL)
+FUNCTIONAL JAVASCRIPT & REAL-TIME INTERACTIVITY (CRITICAL)
 ══════════════════════════════════════
 
 If the requested website is an interactive application (e.g., Expense Tracker, Todo List, Calculator, Dashboard):
 
-* All buttons (Add, Delete, Edit, Update, Calculate) MUST have fully working JavaScript event listeners.
-* Forms MUST use 'e.preventDefault()', validate inputs, and actually process/save the data.
-* Data MUST be saved to and loaded from the browser's 'localStorage' so it persists on page refresh.
-* The UI MUST dynamically update (re-render) immediately when data is added, updated, or deleted.
-* Never generate "dummy" or "mock" buttons that just show an alert or do nothing. Every interactive element must perform its intended logic.
-* Calculate totals, balances, or counts dynamically based on the actual stored data array.
+* IN-MEMORY STATE MANAGEMENT: Maintain a central JavaScript state (e.g., 'let expenses = []'). Do not rely on localStorage or a backend for core functionality.
+* REAL-TIME UI UPDATES: Create a dedicated 'render()' or 'updateUI()' function. Every time the state changes (add, edit, delete), this function MUST immediately clear and rebuild the relevant DOM elements to reflect the new state in real-time.
+* WORKING ACTIONS: All buttons (Add, Delete, Edit, Calculate) MUST have fully working JavaScript event listeners that mutate the in-memory state and trigger the 'render()' function instantly.
+* FORM HANDLING: Forms MUST use 'e.preventDefault()', validate inputs, push/update the in-memory state, clear the form inputs, and trigger the UI update.
+* DYNAMIC CALCULATIONS: Totals, balances, or counts MUST be recalculated dynamically on every state change and updated in the DOM immediately.
+* NO MOCK ACTIONS: Never generate buttons that only show an 'alert()' or do nothing. Every interactive element must perform its intended logic and visibly change the UI in real-time.
 
 ══════════════════════════════════════
 ANIMATIONS & INTERACTIONS
@@ -410,7 +410,7 @@ Before responding, internally verify:
 
 ✓ Every form validates.
 
-✓ Interactive features (add, edit, delete, calculate) actually work and persist in localStorage.
+✓ Interactive features (add, edit, delete, calculate) work in real-time using in-memory state and immediately update the DOM.
 
 ✓ Every image matches the website content.
 
@@ -544,7 +544,12 @@ export const getWebsiteById = async(req,res)=>{
 }
 
 export const changes = async (req,res) =>{
+    const abortController = new AbortController()
+    const handleRequestClose = () => abortController.abort()
+
     try{
+        req.on('close', handleRequestClose)
+
         const {prompt}=req.body
         if(!prompt){
             return res.status(400).json({message:"prompt is required"})
@@ -588,15 +593,19 @@ export const changes = async (req,res) =>{
         let parsed = null
        //iterate until parsed data is not received
         for(let i =0; i<2 && !parsed; i++){
-            raw = await generateResponse(updatePrompt)
+            raw = await generateResponse(updatePrompt, { signal: abortController.signal })
             parsed = await extractJson(raw)
 
             if(!parsed){
-                raw = await generateResponse(updatePrompt + "\n\nRETURN ONLY RAW JSON.")
+                raw = await generateResponse(updatePrompt + "\n\nRETURN ONLY RAW JSON.", { signal: abortController.signal })
                 parsed  = await extractJson(raw)
             }
             console.log(raw)
             console.log(parsed)
+        }
+
+        if(abortController.signal.aborted){
+            return
         }
 
         if(!parsed.code){
@@ -619,7 +628,12 @@ export const changes = async (req,res) =>{
         })
 
     }catch(error){
+             if(abortController.signal.aborted || error.name === 'AbortError'){
+                return
+             }
              return res.status(500).json({message: `update website error ${error}`})
+    }finally{
+             req.off('close', handleRequestClose)
     }
 }
 
