@@ -668,7 +668,8 @@ export const deploy=async (req,res)=>{
        }
 
        website.deployed=true
-       website.deployedUrl=`${process.env.FRONTEND_URL}/site/${website.slug}`
+       const liveSiteUrl = process.env.LIVE_SITE_URL || process.env.FRONTEND_URL
+       website.deployedUrl=`${liveSiteUrl}/site/${website.slug}`
        await website.save()
 
        return res.status(200).json({
@@ -683,8 +684,7 @@ export const deploy=async (req,res)=>{
 export async function getBySlug(req,res){
     try{
     const website = await Website.findOne({
-        slug: req.params.slug,
-        user: req.user._id
+        slug: req.params.slug
        })
 
        if(!website){
