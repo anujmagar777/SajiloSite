@@ -4,7 +4,7 @@ import { serverUrl } from '../config'
 import { useDispatch } from 'react-redux'
 import { setUserData } from '../redux/userSlice'
 import { auth } from '../firebase'
-import { getRedirectResult } from 'firebase/auth'
+import { getRedirectResult, browserPopupRedirectResolver } from 'firebase/auth'
 
 function useGetCurrentUser() {
 
@@ -13,7 +13,7 @@ function useGetCurrentUser() {
     useEffect(() => {
         const initAuth = async () => {
             try {
-                const redirectResult = await getRedirectResult(auth)
+                const redirectResult = await getRedirectResult(auth, browserPopupRedirectResolver)
                 if (redirectResult?.user) {
                     const { data } = await axios.post(`${serverUrl}/api/auth/google`, {
                         name: redirectResult.user.displayName,
@@ -29,12 +29,33 @@ function useGetCurrentUser() {
                 console.error("Redirect sign-in error:", error)
             }
 
+            const firebaseUser = auth.currentUser
+            if (firebaseUser) {
+                try {
+                    const result = await axios.get(`${serverUrl}/api/user/me`,
+                        { withCredentials: true })
+                    dispatch(setUserData(result.data))
+                } catch (error) {
+                    console.log("Backend unreachable, using Firebase user:", error.message)
+                    dispatch(setUserData({
+                        name: firebaseUser.displayName,
+                        email: firebaseUser.email,
+                        avatar: firebaseUser.photoURL,
+                        uid: firebaseUser.uid
+                    }))
+                }
+                setLoading(false)
+                return
+            }
+
             try {
                 const result = await axios.get(`${serverUrl}/api/user/me`, 
                     {withCredentials: true})
                 dispatch(setUserData(result.data))
             } catch (error) {
-                console.log(error)
+                if (error?.response?.status !== 401) {
+                    console.log(error)
+                }
             } finally {
                 setLoading(false)
             }

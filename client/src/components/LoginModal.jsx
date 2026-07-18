@@ -1,12 +1,31 @@
 import React from 'react'
 import {AnimatePresence, motion} from 'motion/react'
 import { auth, provider } from '../firebase';
-import { signInWithRedirect } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, browserPopupRedirectResolver } from 'firebase/auth';
 import {serverUrl} from '../config.js'
+import axios from 'axios'
+import { useDispatch } from 'react-redux'
+import { setUserData } from '../redux/userSlice'
 
 function LoginModal({open, onClose}) {
-  const handleGoogleAuth=()=>{
-    signInWithRedirect(auth, provider)
+  const dispatch = useDispatch()
+  const handleGoogleAuth=async ()=>{
+    try {
+      const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver)
+      const { data } = await axios.post(`${serverUrl}/api/auth/google`,{
+        name: result.user.displayName,
+        email: result.user.email,
+        avatar: result.user.photoURL,
+        uid: result.user.uid
+      },{withCredentials: true})
+      dispatch(setUserData(data.user))
+      onClose()
+    } catch (error) {
+      console.error("Google Sign-In Error:", error)
+      if (error.code === 'auth/popup-blocked') {
+        signInWithRedirect(auth, provider, browserPopupRedirectResolver)
+      }
+    }
   }
   return (
     <AnimatePresence>

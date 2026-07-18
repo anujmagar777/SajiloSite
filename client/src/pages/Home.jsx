@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {AnimatePresence, motion} from 'motion/react'
 import LoginModal from '../components/LoginModal.jsx'
 import { auth } from '../firebase'
-import { onAuthStateChanged, getRedirectResult, signOut } from 'firebase/auth'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { useDispatch, useSelector } from 'react-redux'
 import axios from 'axios'
 import { serverUrl } from '../config'
@@ -42,18 +42,6 @@ function Home() {
                     setOpenLogin(false)
                 }
             })
-
-            getRedirectResult(auth)
-                .then((result) => {
-                    if (result?.user) {
-                        setUser(result.user)
-                        setOpenLogin(false)
-                    }
-                })
-                .catch((error) => {
-                    console.log('Google redirect result error:', error)
-                })
-
             return () => unsubscribe()
         }, [])
 
