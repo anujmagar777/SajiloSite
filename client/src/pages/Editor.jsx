@@ -6,8 +6,6 @@ import {
   Code2,
   MessageSquare,
   Monitor,
-  Pause,
-  Play,
   Send,
   X,
   Trash2,
@@ -159,36 +157,37 @@ const handleDeploy = async () => {
   };
 
   useEffect(() => {
-    if (analysisState !== "running") return;
-
-    const i = setInterval(() => {
-      setAnalysisProgress((current) => {
-        const increment =
-          current < 20 ? Math.random() * 1.5 :
-          current < 60 ? Math.random() * 1.2 :
-          Math.random() * 0.6;
-
-        return Math.min(Math.floor(current + increment), 93);
-      });
-    }, 1200);
-
-    return () => clearInterval(i);
-  }, [analysisState]);
-
-  useEffect(() => {
-    if (analysisState === "idle") {
+    if (analysisState !== "running") {
       setThinkingIndex(0);
+      return;
     }
-  }, [analysisState]);
 
-  useEffect(() => {
-    setThinkingIndex(
-      Math.min(
-        Math.floor((analysisProgress / 100) * thinkingSteps.length),
-        thinkingSteps.length - 1,
-      ),
-    );
-  }, [analysisProgress]);
+    setThinkingIndex(0);
+    setAnalysisProgress(0);
+
+    const stepInterval = setInterval(() => {
+      setThinkingIndex((current) => {
+        const next = current + 1;
+        if (next >= thinkingSteps.length) {
+          clearInterval(stepInterval);
+          return current;
+        }
+        return next;
+      });
+    }, 10000);
+
+    const progressInterval = setInterval(() => {
+      setAnalysisProgress((current) => {
+        if (current >= 93) return 93;
+        return Math.min(current + Math.random() * 1.5, 93);
+      });
+    }, 200);
+
+    return () => {
+      clearInterval(stepInterval);
+      clearInterval(progressInterval);
+    };
+  }, [analysisState]);
 
   useEffect(() => {
     const handleGetWebsite = async () => {
@@ -278,54 +277,15 @@ const handleDeploy = async () => {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs font-semibold text-white tabular-nums">
-                        {analysisProgress}%
+                        {analysisProgress.toFixed(2)}%
                       </span>
-                      {analysisState === "running" ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={pauseAnalysis}
-                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
-                            aria-label="Pause analysis"
-                          >
-                            <Pause size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelAnalysis}
-                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition text-red-300"
-                            aria-label="Cancel analysis"
-                          >
-                            <X size={14} />
-                          </button>
-                        </>
-                      ) : analysisState === "paused" ? (
-                        <>
-                        <button
-                          type="button"
-                          onClick={resumeAnalysis}
-                          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
-                          aria-label="Resume analysis"
-                        >
-                          <Play size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelAnalysis}
-                          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition text-red-300"
-                          aria-label="Cancel analysis"
-                        >
-                          <X size={14} />
-                        </button>
-                        </>
-                      ) : null}
                     </div>
                   </div>
 
                   <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                     <motion.div
                       className="h-full bg-linear-to-r from-violet-500 to-blue-500"
-                      animate={{ width: `${analysisProgress}%` }}
+                      animate={{ width: `${analysisProgress.toFixed(2)}%` }}
                       transition={{ ease: "easeOut", duration: 0.6 }}
                     />
                   </div>
@@ -339,14 +299,6 @@ const handleDeploy = async () => {
               className="flex gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (analysisState === "running") {
-                  pauseAnalysis();
-                  return;
-                }
-                if (analysisState === "paused") {
-                  resumeAnalysis();
-                  return;
-                }
                 handleUpdate();
               }}
             >
@@ -355,19 +307,14 @@ const handleDeploy = async () => {
                 className="flex-1 resize-none rounded-2xl px-4 py-3 bg-white/5 border border-white/10 text-sm outline-none"
                 onChange={(e) => setPrompt(e.target.value)}
                 value={prompt}
-                disabled={analysisState === "running"}
+                disabled={updateLoading}
               />
               <button
                 className="px-4 py-3 rounded-2xl bg-white text-black disabled:opacity-60 disabled:cursor-not-allowed"
                 type="submit"
+                disabled={updateLoading}
               >
-                {analysisState === "running" ? (
-                  <Pause size={14} />
-                ) : analysisState === "paused" ? (
-                  <Play size={14} />
-                ) : (
-                  <Send size={14} />
-                )}
+                <Send size={14} />
               </button>
             </form>
           </div>
@@ -476,54 +423,15 @@ const handleDeploy = async () => {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs font-semibold text-white tabular-nums">
-                        {analysisProgress}%
+                        {analysisProgress.toFixed(2)}%
                       </span>
-                      {analysisState === "running" ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={pauseAnalysis}
-                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
-                            aria-label="Pause analysis"
-                          >
-                            <Pause size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelAnalysis}
-                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition text-red-300"
-                            aria-label="Cancel analysis"
-                          >
-                            <X size={14} />
-                          </button>
-                        </>
-                      ) : analysisState === "paused" ? (
-                        <>
-                        <button
-                          type="button"
-                          onClick={resumeAnalysis}
-                          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
-                          aria-label="Resume analysis"
-                        >
-                          <Play size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelAnalysis}
-                          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition text-red-300"
-                          aria-label="Cancel analysis"
-                        >
-                          <X size={14} />
-                        </button>
-                        </>
-                      ) : null}
                     </div>
                   </div>
 
                   <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                     <motion.div
                       className="h-full bg-linear-to-r from-violet-500 to-blue-500"
-                      animate={{ width: `${analysisProgress}%` }}
+                      animate={{ width: `${analysisProgress.toFixed(2)}%` }}
                       transition={{ ease: "easeOut", duration: 0.6 }}
                     />
                   </div>
@@ -537,14 +445,6 @@ const handleDeploy = async () => {
               className="flex gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (analysisState === "running") {
-                  pauseAnalysis();
-                  return;
-                }
-                if (analysisState === "paused") {
-                  resumeAnalysis();
-                  return;
-                }
                 handleUpdate();
               }}
             >
@@ -553,19 +453,14 @@ const handleDeploy = async () => {
                 className="flex-1 resize-none rounded-2xl px-4 py-3 bg-white/5 border border-white/10 text-sm outline-none"
                 onChange={(e) => setPrompt(e.target.value)}
                 value={prompt}
-                disabled={analysisState === "running"}
+                disabled={updateLoading}
               />
               <button
                 className="px-4 py-3 rounded-2xl bg-white text-black disabled:opacity-60 disabled:cursor-not-allowed"
                 type="submit"
+                disabled={updateLoading}
               >
-                {analysisState === "running" ? (
-                  <Pause size={14} />
-                ) : analysisState === "paused" ? (
-                  <Play size={14} />
-                ) : (
-                  <Send size={14} />
-                )}
+                <Send size={14} />
               </button>
             </form>
           </div>

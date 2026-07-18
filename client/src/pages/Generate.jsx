@@ -152,19 +152,15 @@ function Generate() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-16 text-center"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-zinc-300 mb-6">
-            <Sparkles size={16} className="text-yellow-400" />
-            <span>AI-Powered Website Generation</span>
-          </div>
           <h1 className='text-4xl md:text-6xl font-bold mb-5 leading-tight'>
-            Create Your Dream Website
+            Create Your Website
             <span className='block bg-linear-to-r from-violet-300 to-blue-300 bg-clip-text text-transparent mt-2'>
               In Minutes, Not Days
             </span>
           </h1>
           <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
-            Describe your ideal website and watch AI bring it to life with modern design, 
-            smooth animations, and production-ready code.
+            Describe your ideal website and watch AI bring it to life with modern design 
+            and smooth animations.
           </p>
         </motion.div>
 
