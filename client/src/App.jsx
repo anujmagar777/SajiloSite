@@ -6,8 +6,8 @@ import LiveSite from './pages/LiveSite'
 import { useSelector } from 'react-redux'
 import useGetCurrentUser from './hooks/useGetCurrentUser'
 import WebsiteEditor from './pages/Editor'
-
-export const serverUrl = "http://localhost:8000"
+import { serverUrl } from './config'
+export { serverUrl }
 function App() {
   const { loading } = useGetCurrentUser()
   const { userData } = useSelector(state => state.user)

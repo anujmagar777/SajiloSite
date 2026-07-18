@@ -1,39 +1,13 @@
 import React from 'react'
 import {AnimatePresence, motion} from 'motion/react'
 import { auth, provider } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
-import axios from "axios"
+import { signInWithRedirect } from 'firebase/auth';
 import {serverUrl} from '../config.js'
-import { useDispatch } from 'react-redux'
-import { setUserData } from '../redux/userSlice'
 
 function LoginModal({open, onClose}) {
-  const dispatch = useDispatch()
-  const handleGoogleAuth=async ()=>{
-    try {
-      console.log("Starting Google Sign-In...");
-      const result = await signInWithPopup(auth, provider);
-      console.log("Google Sign-In successful:", result.user);
-      
-      console.log("Sending data to backend:", {
-        name: result.user.displayName,
-        email: result.user.email,
-        avatar: result.user.photoURL,
-        uid: result.user.uid
-      });
-      
-      const {data} = await axios.post(`${serverUrl}/api/auth/google`,{
-        name: result.user.displayName,
-        email: result.user.email,
-        avatar: result.user.photoURL,
-        uid: result.user.uid
-      },{withCredentials: true})
-      dispatch(setUserData(data.user))
-      console.log("Backend response:", data);
-    } catch (error) {
-      console.error("Google Sign-In Error:", error.message);
-      console.error("Full error:", error);
-    } }
+  const handleGoogleAuth=()=>{
+    signInWithRedirect(auth, provider)
+  }
   return (
     <AnimatePresence>
        {open && 

@@ -31,10 +31,12 @@ export const googleAuth = async(req, res)=>{
         }
         const token = await jwt.sign({id:user._id}, process.env.JWT_SECRET,{expiresIn: "7d"})
 
+        const isProduction = process.env.NODE_ENV === 'production'
+
         res.cookie("token", token,{
             httpOnly:true,
-            secure:false,
-            sameSite:"strict",
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "strict",
             maxAge:7*24*60*60*1000
         })
 
@@ -47,10 +49,11 @@ export const googleAuth = async(req, res)=>{
 
 export const logOut = async(req,res)=>{
     try{
+        const isProduction = process.env.NODE_ENV === 'production'
         res.clearCookie("token",{
             httpOnly:true,
-            secure:false,
-            sameSite:"strict"
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "strict"
         })
         return res.status(200).json({message: "Logged out successfully"})
     } catch(error){
