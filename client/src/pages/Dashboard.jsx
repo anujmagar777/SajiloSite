@@ -175,11 +175,12 @@ function Dashboard() {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm 
-                         outline-none focus:border-white/30 transition cursor-pointer"
+                         outline-none focus:border-white/30 transition cursor-pointer text-white"
+                style={{ colorScheme: 'dark' }}
               >
-                <option value="updatedAt">Last Updated</option>
-                <option value="createdAt">Recently Created</option>
-                <option value="title">Name (A-Z)</option>
+                <option value="updatedAt" className="bg-gray-900 text-white">Last Updated</option>
+                <option value="createdAt" className="bg-gray-900 text-white">Recently Created</option>
+                <option value="title" className="bg-gray-900 text-white">Name (A-Z)</option>
               </select>
 
               {/* View Mode */}
@@ -287,7 +288,7 @@ function Dashboard() {
                             title={w.title || 'Website preview'}
                             srcDoc={buildSrcDoc(w.latestCode || '')}
                             className="absolute inset-0 h-[150%] w-[150%] scale-[0.65] origin-top-left pointer-events-none bg-white"
-                            sandbox="allow-scripts allow-forms allow-popups"
+                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                           />
                         </div>
                       </div>

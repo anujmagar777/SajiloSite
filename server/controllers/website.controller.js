@@ -29,43 +29,68 @@ USER REQUIREMENT:
 {USER_PROMPT}
 
 ══════════════════════════════════════
+IFRAME COMPATIBILITY (CRITICAL — READ FIRST)
+══════════════════════════════════════
+
+This HTML will be rendered inside an <iframe srcdoc="..."> — not as a standalone page. Every design and code decision must account for this:
+
+* NO localStorage, sessionStorage, cookies, or IndexedDB. Treat ALL state 
+  (active tab, form values, selected filters, gallery index, scroll-reveal 
+  triggers, cart/counter state, etc.) as in-memory JavaScript variables 
+  only. State resets on reload — this is expected and correct.
+* Everything must be ONE self-contained HTML document — all CSS in a 
+  single <style> block, all JS in a single <script> block. No external 
+  <link rel="stylesheet">, no <script src="">, no relative file paths.
+* Any link to an external site must use target="_blank" — clicking a same-
+  window external link inside an iframe leads to broken or blocked 
+  navigation.
+* Do not use window.location, window.history, or hash-based routing for 
+  any logic — the iframe's location is not the parent page's URL.
+* Avoid APIs that trigger permission prompts (camera, mic, geolocation, 
+  clipboard-write) — these are typically blocked in sandboxed iframes.
+* Google Fonts / external @font-face links may be blocked depending on 
+  iframe sandboxing. Always define a solid system-font fallback stack so 
+  typography still looks intentional if the web font fails to load.
+* Wrap uncertain browser APIs (IntersectionObserver, matchMedia, etc.) in 
+  feature checks or try/catch — there is no visible console for the end 
+  user to see errors.
+
+══════════════════════════════════════
 QUALITY STANDARD - 2026 MODERN DESIGN
 ══════════════════════════════════════
 
-Generate a stunning, award-winning quality website that looks like it was designed by a top-tier agency in 2026.
+Generate a stunning, award-winning quality website that looks like it was designed by a top-tier agency in 2026 — not a templated AI default.
 
 Design Principles:
-* Modern minimalist aesthetic with bold typography
+* Modern minimalist aesthetic with bold, opinionated typography
 * Generous whitespace and breathing room
-* Sophisticated color palette (60-30-10 rule: 60% dominant, 30% secondary, 10% accent)
-* Premium gradients and subtle shadows
+* Sophisticated color palette (60-30-10 rule: 60% dominant, 30% secondary, 10% accent) — use exact hex values from the user requirement; never fall back to generic/cliché combinations for the stated category
+* Premium gradients and subtle shadows, used with restraint
 * Smooth micro-interactions and hover effects
-* Glass morphism and backdrop blur effects where appropriate
-* Modern border radius (rounded-2xl, rounded-3xl)
-* Dark mode friendly with excellent contrast
+* Glass morphism / backdrop blur where it fits the brand tone requested
+* Consistent border radius language (sharp/minimal OR soft/rounded — pick one direction matching the brand, don't mix)
+* Excellent contrast in both light and dark palettes
 
 Typography:
-* Use system fonts with excellent readability (Inter, SF Pro, Segoe UI)
-* Clear hierarchy with bold headings
-* Proper line heights (1.5-1.7 for body text)
-* Letter spacing for uppercase text
-* Font weights: 400 (body), 500 (medium), 600 (semibold), 700 (bold)
+* Use the font pairing/character described in the user requirement (serif display + sans body, or similar) via a system font stack — no external font files unless explicitly safe (see IFRAME COMPATIBILITY)
+* Clear hierarchy with deliberate heading sizes
+* Proper line heights (1.5–1.7 for body text)
+* Letter-spacing tuned for uppercase/small-caps labels
+* Font weights used meaningfully: 400 (body), 500 (medium), 600 (semibold), 700 (bold)
 
 Visual Elements:
-* Modern cards with subtle borders and shadows
-* Gradient buttons with hover animations
-* Icon integration (use emoji or SVG icons)
-* Smooth transitions (0.3s ease)
-* Subtle animations on scroll
-* Professional image placeholders with gradient overlays
-* Modern badge/tag designs
+* Cards/sections with subtle borders and shadows appropriate to the brand tone
+* Buttons with purposeful hover animations (fill, lift, magnetic, underline-slide — match what's requested)
+* SVG icons preferred over emoji for a polished look
+* Smooth transitions (0.2s–0.4s ease)
+* Scroll-triggered reveal animations, staggered where natural
+* Real, specific placeholder content — invented but plausible names, numbers, and details fitting the brand described
 
 Content:
-* Realistic, professional content
-* No Lorem Ipsum
-* No placeholder text
-* Industry-specific terminology
-* Compelling copy that converts
+* Realistic, professional, brand-specific copy
+* No Lorem Ipsum, no generic placeholder text ("Project 1", "Lorem Company")
+* Industry-specific terminology matching the business described
+* Copy with a clear voice/tone, not generic marketing filler
 
 ══════════════════════════════════════
 WEBSITE TYPE DETECTION
@@ -73,397 +98,127 @@ WEBSITE TYPE DETECTION
 
 First determine what the user requested.
 
-IF the request is a COMPLETE WEBSITE:
-
+IF the request is a COMPLETE WEBSITE (Portfolio, Restaurant, Agency, SaaS, Ecommerce, School, Hospital, Hotel, Travel, Real Estate, etc.):
 Generate all required sections with working navigation.
 
-Examples:
-
-* Portfolio
-* Company
-* Restaurant
-* Agency
-* SaaS
-* Ecommerce
-* School
-* Hospital
-* Hotel
-* Travel
-* Real Estate
-
-IF the request is a SINGLE PAGE:
-
-Examples:
-
-* Login
-* Signup
-* Forgot Password
-* Dashboard
-* Pricing Table
-* Contact Form
-* Profile
-* Settings
-
-Generate ONLY that page.
-
-Never invent unnecessary pages.
-
-Never generate fake navigation.
+IF the request is a SINGLE PAGE (Login, Signup, Dashboard, Pricing, Contact, Profile, Settings, etc.):
+Generate ONLY that page. Never invent unnecessary pages or fake navigation.
 
 ══════════════════════════════════════
 RESPONSIVE DESIGN
 ══════════════════════════════════════
 
-Mobile First.
+Mobile-first. Support Mobile (<768px), Tablet (768–1024px), Desktop (>1024px), Large screens.
 
-Support:
+Must use CSS Grid, Flexbox, relative units (rem/%/vw/vh), and media queries.
 
-* Mobile (<768px)
-* Tablet (768px–1024px)
-* Desktop (>1024px)
-* Large Screens
-
-Must use:
-
-* CSS Grid
-* Flexbox
-* Relative units
-* Media queries
-
-Requirements:
-
-* No horizontal scrolling
-* Responsive images
-* Responsive typography
-* Touch-friendly buttons
-* Adaptive layouts
-* Responsive navbar
+Requirements: no horizontal scrolling, responsive images, responsive typography (clamp() preferred), touch-friendly tap targets (min 44px), adaptive layouts, responsive navbar with working hamburger menu on mobile.
 
 ══════════════════════════════════════
 NAVIGATION (MANDATORY)
 ══════════════════════════════════════
 
-If navigation exists, it MUST be fully functional.
+If navigation exists, every item MUST:
+* Scroll to an existing section, OR
+* Switch SPA view/page, OR
+* Perform a real JavaScript action
 
-Every navigation item must:
+Never generate href="#" unless a JS click handler is actually attached to it.
 
-* Scroll to an existing section
-
-OR
-
-* Switch SPA pages
-
-OR
-
-* Perform a JavaScript action
-
-Never generate:
-
-href="#"
-
-unless JavaScript handles it.
-
-Desktop:
-
-✓ Navigation works.
-
-✓ Active page updates.
-
-Mobile:
-
-✓ Hamburger menu works.
-
-✓ Menu closes after clicking.
-
-✓ Navigation works after resize.
-
-SPA:
-
-✓ One page visible initially.
-
-✓ No reloads.
-
-✓ Correct active page.
+Desktop: nav works, active section/page highlights correctly.
+Mobile: hamburger opens/closes, menu closes after item click, works correctly after resize.
+SPA (if applicable): only one view visible at a time, no reloads, correct active state.
 
 ══════════════════════════════════════
 CONTEXT-AWARE IMAGE SELECTION
 ══════════════════════════════════════
 
-Images MUST match the website content.
+Images must visually match each section's content, based on the detected website category (e.g. a restaurant needs food/interior/kitchen imagery; a portfolio needs workspace/creative imagery). Use different images per section — never repeat or use unrelated imagery.
 
-Determine the website category before selecting images.
+Preferred order: Unsplash → Pexels direct image URLs.
 
-Choose images relevant to each section.
+Since URL validity cannot be guaranteed by the model, ALWAYS have a fallback: if there's any doubt an image URL will resolve, use a hand-crafted inline SVG placeholder styled with a gradient that matches the section's palette, rather than risk a broken image.
 
-Examples:
-
-Restaurant
-
-* Food
-* Dining
-* Chef
-* Interior
-* Kitchen
-
-Hospital
-
-* Doctors
-* Patients
-* Medical equipment
-* Healthcare
-
-Portfolio
-
-* Developer workspace
-* Designer office
-* Laptop
-* Coding
-
-Agency
-
-* Team meeting
-* Business strategy
-* Office
-* Collaboration
-
-Travel
-
-* Destinations
-* Hotels
-* Beaches
-* Adventure
-
-Gym
-
-* Fitness
-* Personal trainer
-* Exercise
-* Equipment
-
-Education
-
-* Students
-* Teachers
-* Classroom
-* Campus
-
-Real Estate
-
-* Luxury homes
-* Apartments
-* Property interiors
-
-Every image must visually match the section.
-
-Never use random unrelated images.
-
-Use different images for different sections.
-
-Hero images should be premium quality.
+Every image must: display correctly, be responsive (object-fit: cover, max-width: 100%), include descriptive alt text, use loading="lazy".
 
 ══════════════════════════════════════
-IMAGE RULES
+BUTTONS & FORMS
 ══════════════════════════════════════
 
-Generate only valid publicly accessible image URLs.
+Every button performs a real action (navigate, submit, open modal/lightbox, toggle, switch tab) — never a dead button, never a bare alert().
 
-Preferred order:
-
-1. Unsplash
-
-2. Pexels
-
-If a reliable URL cannot be guaranteed:
-
-Generate an inline SVG placeholder that visually matches the section.
-
-Every image must:
-
-* Display correctly
-* Be responsive
-* Include alt text
-* Use loading="lazy"
-* Use object-fit where appropriate
-
-Never output broken images.
+Every form includes: client-side validation, inline error messages, an inline success state (not a browser alert), visible focus styles, and hover states on inputs/buttons.
 
 ══════════════════════════════════════
-BUTTONS
+STATE MANAGEMENT & INTERACTIVITY
 ══════════════════════════════════════
 
-Every button must perform an action.
+For any interactive/stateful behavior (tabs, filters, forms, galleries, add/edit/delete UIs, calculators, counters):
 
-Examples:
-
-* Navigation
-* Submit form
-* Open modal
-* Toggle menu
-* Switch tabs
-
-Never generate dead buttons.
+* Maintain state in plain in-memory JS variables (e.g. let state = {...}) — NEVER localStorage, sessionStorage, cookies, or a backend.
+* Create a dedicated render()/updateUI() function. Any state change must immediately clear and rebuild the relevant DOM to reflect it.
+* All interactive elements need real, working event listeners that mutate state and call render() instantly.
+* Forms use e.preventDefault(), validate, update in-memory state, clear inputs, and re-render.
+* Any totals/counts/calculations recompute live on every relevant state change.
+* Never generate an interactive-looking element that does nothing or only shows an alert().
 
 ══════════════════════════════════════
-FORMS
+ANIMATIONS
 ══════════════════════════════════════
 
-Every form requires:
+Implement smooth, purposeful animation using CSS transitions/transforms and IntersectionObserver for scroll-reveal — never JS-driven layout thrashing. Examples: fade/slide reveal on load, hover elevation, card lift, staggered section reveal on scroll, button press feedback, subtle parallax via transform (not background-attachment: fixed, which breaks on mobile Safari).
 
-* Validation
-* Error messages
-* Success messages
-* Focus styles
-* Hover states
-
-══════════════════════════════════════
-FUNCTIONAL JAVASCRIPT & REAL-TIME INTERACTIVITY (CRITICAL)
-══════════════════════════════════════
-
-If the requested website is an interactive application (e.g., Expense Tracker, Todo List, Calculator, Dashboard):
-
-* IN-MEMORY STATE MANAGEMENT: Maintain a central JavaScript state (e.g., 'let expenses = []'). Do not rely on localStorage or a backend for core functionality.
-* REAL-TIME UI UPDATES: Create a dedicated 'render()' or 'updateUI()' function. Every time the state changes (add, edit, delete), this function MUST immediately clear and rebuild the relevant DOM elements to reflect the new state in real-time.
-* WORKING ACTIONS: All buttons (Add, Delete, Edit, Calculate) MUST have fully working JavaScript event listeners that mutate the in-memory state and trigger the 'render()' function instantly.
-* FORM HANDLING: Forms MUST use 'e.preventDefault()', validate inputs, push/update the in-memory state, clear the form inputs, and trigger the UI update.
-* DYNAMIC CALCULATIONS: Totals, balances, or counts MUST be recalculated dynamically on every state change and updated in the DOM immediately.
-* NO MOCK ACTIONS: Never generate buttons that only show an 'alert()' or do nothing. Every interactive element must perform its intended logic and visibly change the UI in real-time.
-
-══════════════════════════════════════
-ANIMATIONS & INTERACTIONS
-══════════════════════════════════════
-
-Implement smooth, purposeful animations:
-
-* Fade in on load
-* Slide transitions
-* Hover elevation effects
-* Card lift on hover
-* Smooth scrolling
-* Section reveal on scroll
-* Button press feedback
-* Loading skeletons
-* Subtle parallax effects
-
-Use CSS transitions and transforms for performance.
-Avoid excessive animations that distract from content.
+Purposeful, not excessive — motion should support content, not distract from it.
 
 ══════════════════════════════════════
 CODE QUALITY
 ══════════════════════════════════════
 
-Generate:
-
-* One complete HTML document
-* One comprehensive style block
-* One organized script block
-
-Requirements:
-
-* No duplicate CSS rules
-* No duplicate JavaScript functions
-* Minimal inline styles (only when absolutely necessary)
-* Meaningful class names (BEM or similar methodology)
-* Well-organized, commented code
-* No unused code
-* Zero console errors
-* Zero runtime errors
+* One HTML document, one <style> block, one <script> block
+* No duplicate CSS rules or JS functions
+* Minimal inline styles
+* Meaningful class names (BEM-style preferred)
+* Well-organized, commented code, no unused code
+* Zero console errors, zero runtime errors
 
 ══════════════════════════════════════
 TECHNICAL RULES
 ══════════════════════════════════════
 
-Use only:
-
-* HTML5
-* CSS3 (with modern features like Grid, Flexbox, Custom Properties)
-* Vanilla JavaScript (ES6+)
-
-No external frameworks or libraries.
-
-No external CSS files.
-
-No external JavaScript files.
-
-Use system font stack for optimal performance.
-
-Fully compatible with iframe srcdoc.
-
-CSS Features to use:
-* CSS Grid for layouts
-* Flexbox for alignment
-* CSS Custom Properties (variables)
-* Modern selectors
-* Smooth transitions
-* Backdrop filter for glass effects
+Use only HTML5, CSS3 (Grid, Flexbox, Custom Properties, modern selectors, backdrop-filter), and Vanilla JS (ES6+). No external frameworks, no external CSS/JS files. System font stack by default. Must render correctly inside <iframe srcdoc>.
 
 ══════════════════════════════════════
-MANDATORY VALIDATION
+MANDATORY VALIDATION (INTERNAL — DO NOT SKIP)
 ══════════════════════════════════════
 
-Before responding, internally verify:
+Before responding, verify:
+✓ No localStorage/sessionStorage/cookies used anywhere
+✓ Everything is self-contained in one HTML document (no external file refs)
+✓ Navigation and every nav item works
+✓ Every button performs a real action
+✓ Every form validates and shows inline success/error states
+✓ Interactive features update state and re-render in real-time
+✓ Every image matches its section's content; no broken images (SVG fallback used where uncertain)
+✓ No console/runtime errors
+✓ Mobile, tablet, desktop, large-screen layouts all work, no horizontal scroll
+✓ No dead links, no dead buttons, no href="#" without a handler
+✓ Copy is specific and realistic, no Lorem Ipsum
+✓ Production-ready and deployable as-is
 
-✓ Navigation works.
-
-✓ Every navigation item performs an action.
-
-✓ Every button works.
-
-✓ Every form validates.
-
-✓ Interactive features (add, edit, delete, calculate) work in real-time using in-memory state and immediately update the DOM.
-
-✓ Every image matches the website content.
-
-✓ Hero image matches the website category.
-
-✓ Images are different across sections.
-
-✓ No broken images.
-
-✓ No console errors.
-
-✓ No JavaScript errors.
-
-✓ Mobile works.
-
-✓ Tablet works.
-
-✓ Desktop works.
-
-✓ Large screens work.
-
-✓ Responsive layout.
-
-✓ No horizontal scrolling.
-
-✓ No dead links.
-
-✓ No dead buttons.
-
-✓ Website is production-ready.
-
-If ANY check fails, regenerate before responding.
+If any check fails, regenerate before responding.
 
 ══════════════════════════════════════
 OUTPUT FORMAT
 ══════════════════════════════════════
 
-Return ONLY valid JSON.
+Return ONLY valid JSON, nothing else:
 
 {
 "message": "Website generated successfully.",
 "code": "<FULL VALID HTML DOCUMENT>"
 }
 
-Rules:
-
-* No markdown
-* No explanations
-* No additional text
-* Return raw JSON only
-* HTML must run immediately
-* Footer copyright must use 2026
-
+Rules: no markdown, no explanations, no additional text outside the JSON, HTML must run immediately as-is, footer copyright must use 2026.
 `
 
 

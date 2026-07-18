@@ -38,6 +38,7 @@ function WebsiteEditor() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const activePromptRef = useRef("");
   const abortControllerRef = useRef(null);
+  const progressRef = useRef(null);
 
   const thinkingSteps = [
     "Understanding your request...",
@@ -176,16 +177,20 @@ const handleDeploy = async () => {
       });
     }, 10000);
 
-    const progressInterval = setInterval(() => {
-      setAnalysisProgress((current) => {
-        if (current >= 93) return 93;
-        return Math.min(current + Math.random() * 1.5, 93);
-      });
-    }, 200);
+    const progressDelay = setTimeout(() => {
+      const progressInterval = setInterval(() => {
+        setAnalysisProgress((current) => {
+          if (current >= 93) return 93;
+          return Math.min(current + Math.random() * 1.5, 93);
+        });
+      }, 200);
+      progressRef.current = progressInterval;
+    }, 3000);
 
     return () => {
       clearInterval(stepInterval);
-      clearInterval(progressInterval);
+      clearTimeout(progressDelay);
+      if (progressRef.current) clearInterval(progressRef.current);
     };
   }, [analysisState]);
 
