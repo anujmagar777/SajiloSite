@@ -1,6 +1,6 @@
 # SajiloSite
 
-AI website builder that generates modern, responsive sites from natural language prompts using OpenRouter's Deepseek model. Includes Google authentication, a live editor with Monaco + AI chat updates, one-click deployment, and public site viewing.
+AI website builder that generates modern, responsive sites and web apps from natural language prompts using OpenRouter's Deepseek model. Includes Google authentication, a live editor with Monaco + AI chat updates (with auto-save), one-click deployment, and public site viewing.
 
 ---
 
@@ -16,14 +16,17 @@ AI website builder that generates modern, responsive sites from natural language
 
 - Google sign-in via Firebase Auth popup/redirect with backend JWT session cookie
 - Protected routes for Dashboard, Generate, and Editor pages
-- AI website generation from natural language prompts (with animated progress states)
+- AI website generation from natural language prompts (with animated progress + thinking steps)
 - Example prompts on the Generate page for quick inspiration
-- Live editor with Monaco code editor, auto-save draft, and AI-powered chat updates (with pause/cancel/resume)
+- Live editor with Monaco code editor, **auto-save (800ms debounce)**, and AI-powered chat updates
 - Conversation history per website (user/AI messages)
 - One-click deployment with unique slug URLs
 - Dashboard with grid/list views, search, sort (updated, created, title), stats, deploy, copy link, and delete
 - Public live site viewing at `/site/:slug`
-- Raw HTML preview endpoints (iframe-ready with localStorage/sessionStorage shim)
+- **Server-served iframe preview** for real origin (fixes form submits, JS interactivity)
+- Raw HTML preview endpoints with **localStorage, sessionStorage, history.pushState, and IndexedDB shims** for sandboxed iframes
+- **Smart prompt system** that detects website type (marketing site, single page, or interactive app/game) and tailors generation accordingly
+- **Game/chess validation** in generated code (legal move enforcement, turn order, win detection)
 - Vercel deployment support (client SPA + serverless handler)
 
 ---
@@ -155,7 +158,14 @@ npm run dev        # starts on http://localhost:5173
 
 ## AI Model
 
-Uses OpenRouter with `deepseek/deepseek-chat`. Configuration is in `server/config/openRouter.js`. The system prompt enforces raw JSON output with full HTML documents that render inside sandboxed iframes.
+Uses OpenRouter with `deepseek/deepseek-chat`. Configuration is in `server/config/openRouter.js`. The system prompt (`masterPrompt` in `server/controllers/website.controller.js`) includes:
+
+- **iframe compatibility rules** — no localStorage/sessionStorage/IndexedDB, no external files, safe fallbacks for clipboard/DnD
+- **Website type detection** — automatically classifies prompts into marketing site, single page, or interactive web app/game
+- **State management enforcement** — generated apps use real in-memory state with live DOM updates, never mock actions
+- **Game validation** — chess and rule-based games must enforce legal moves, turn order, and win-state detection
+- **Responsive design** — mandates breakpoints from 320px to 1440px+ with specific checks
+- Outputs raw JSON with full HTML documents ready for iframe rendering
 
 ---
 
