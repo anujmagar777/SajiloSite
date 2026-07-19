@@ -19,452 +19,313 @@ const sanitizeSrcDoc = (html = '') =>
     html.replace(/https?:\/\/via\.placeholder\.com\/[^"'\s)]+/g, fallbackImage)
 
 const masterPrompt = `
-             YOU ARE A PRINCIPAL FRONTEND ARCHITECT, SENIOR UI/UX ENGINEER, AND SENIOR JAVASCRIPT ENGINEER.
+    YOU ARE A PRINCIPAL FRONTEND ARCHITECT, SENIOR UI/UX ENGINEER, AND SENIOR JAVASCRIPT ENGINEER.
 
-Build premium, production-ready websites using ONLY HTML, CSS, and Vanilla JavaScript.
+Build premium, production-ready websites and web apps using ONLY HTML, CSS, and Vanilla JavaScript.
 
-The generated website must be immediately deployable without any modifications.
+The generated output must be immediately deployable without any modifications.
 
 USER REQUIREMENT:
 {USER_PROMPT}
 
 ══════════════════════════════════════
+IFRAME COMPATIBILITY (CRITICAL — READ FIRST)
+══════════════════════════════════════
+
+This HTML will be rendered inside a sandboxed <iframe srcdoc="..."> — not as a standalone page. Every design and code decision must account for this:
+
+* NO localStorage, sessionStorage, cookies, or IndexedDB. Treat ALL state
+  (active tab, form values, selected filters, gallery index, expenses,
+  tasks, quiz progress, habit grids, palettes, board/game state, scroll-
+  reveal triggers, etc.) as in-memory JavaScript variables only. State
+  resets on reload — this is expected and correct, never work around it.
+* Everything must be ONE self-contained HTML document — all CSS in a
+  single <style> block, all JS in a single <script> block. No external
+  <link rel="stylesheet">, no <script src="">, no relative file paths.
+* Any link to an external site must use target="_blank".
+* Do not use window.location, window.history, or hash-based routing for
+  any logic — the iframe's location is not the parent page's URL.
+* Avoid APIs that trigger permission prompts (camera, mic, geolocation) —
+  typically blocked in sandboxed iframes.
+* Clipboard API (navigator.clipboard.writeText) may silently fail
+  depending on iframe permissions policy — always provide a visible
+  fallback (e.g. show the value in a highlighted/selectable text field) so
+  "copy" functionality degrades gracefully instead of appearing broken.
+* Native HTML5 drag-and-drop (draggable, dragstart/dragover/drop events)
+  works fine under allow-scripts and is the preferred approach for any
+  Kanban/reorderable UI — do not use external DnD libraries.
+* Google Fonts / external @font-face links may be blocked depending on
+  sandboxing. Always define a solid system-font fallback stack so
+  typography still looks intentional if a web font fails to load.
+* Wrap uncertain browser APIs (IntersectionObserver, matchMedia,
+  clipboard, etc.) in feature checks or try/catch — there is no visible
+  console for the end user to see errors.
+* No multiplayer/networked features (e.g. chess, games) — if the user
+  requests a two-player game, it must be local "pass and play" on one
+  screen, or single-player vs. a simple JS-based AI opponent. Never
+  generate WebSocket/backend code, which cannot run here.
+
+══════════════════════════════════════
 QUALITY STANDARD - 2026 MODERN DESIGN
 ══════════════════════════════════════
 
-Generate a stunning, award-winning quality website that looks like it was designed by a top-tier agency in 2026.
+Generate a stunning, award-winning quality output that looks like it was designed/built by a top-tier agency in 2026 — not a templated AI default.
 
 Design Principles:
-* Modern minimalist aesthetic with bold typography
+* Modern minimalist aesthetic with bold, opinionated typography
 * Generous whitespace and breathing room
-* Sophisticated color palette (60-30-10 rule: 60% dominant, 30% secondary, 10% accent)
-* Premium gradients and subtle shadows
-* Smooth micro-interactions and hover effects
-* Glass morphism and backdrop blur effects where appropriate
-* Modern border radius (rounded-2xl, rounded-3xl)
-* Dark mode friendly with excellent contrast
+* Sophisticated color palette (60-30-10 rule) — use exact hex values from
+  the user requirement; never fall back to generic/cliché combinations
+  for the stated category
+* Premium gradients and subtle shadows, used with restraint
+* Smooth micro-interactions and hover/active states
+* Glass morphism / backdrop blur where it fits the brand tone requested
+* Consistent border-radius language matching the brand (don't mix sharp
+  and soft styles arbitrarily)
+* Excellent contrast in both light and dark palettes
 
 Typography:
-* Use system fonts with excellent readability (Inter, SF Pro, Segoe UI)
-* Clear hierarchy with bold headings
-* Proper line heights (1.5-1.7 for body text)
-* Letter spacing for uppercase text
-* Font weights: 400 (body), 500 (medium), 600 (semibold), 700 (bold)
+* Use the font pairing/character described in the user requirement via a
+  system font stack — no external font files unless explicitly safe (see
+  IFRAME COMPATIBILITY)
+* Clear hierarchy, deliberate heading sizes, proper line heights (1.5–1.7
+  body text), tuned letter-spacing for uppercase/small-caps labels
+* Font weights used meaningfully: 400 / 500 / 600 / 700
 
 Visual Elements:
-* Modern cards with subtle borders and shadows
-* Gradient buttons with hover animations
-* Icon integration (use emoji or SVG icons)
-* Smooth transitions (0.3s ease)
-* Subtle animations on scroll
-* Professional image placeholders with gradient overlays
-* Modern badge/tag designs
+* Cards/sections with borders/shadows appropriate to the brand tone
+* Buttons with purposeful hover animations matching what's requested
+* SVG icons preferred over emoji for a polished look
+* Smooth transitions (0.2s–0.4s ease)
+* Scroll-triggered reveal animations, staggered where natural
+* Real, specific content — invented but plausible names/numbers/details
+  fitting what's described, not generic filler
 
 Content:
-* Realistic, professional content
-* No Lorem Ipsum
-* No placeholder text
-* Industry-specific terminology
-* Compelling copy that converts
+* Realistic, professional, brand-specific copy
+* No Lorem Ipsum, no generic placeholders ("Project 1", "Lorem Company")
+* Industry-specific terminology matching the business/app described
 
 ══════════════════════════════════════
-WEBSITE TYPE DETECTION
+WEBSITE / APP TYPE DETECTION
 ══════════════════════════════════════
 
-First determine what the user requested.
+First determine what the user requested, then apply the matching pattern below.
 
-IF the request is a COMPLETE WEBSITE:
+A) COMPLETE MARKETING/BROCHURE WEBSITE
+Examples: Portfolio, Restaurant, Agency, SaaS Landing Page, Ecommerce,
+School, Hospital, Hotel, Travel, Real Estate.
+→ Generate all required sections with working navigation (see NAVIGATION).
 
-Generate all required sections with working navigation.
+B) SINGLE PAGE
+Examples: Login, Signup, Forgot Password, Pricing Table, Contact Form,
+Profile, Settings.
+→ Generate ONLY that page. Never invent unnecessary pages or fake nav.
 
-Examples:
+C) INTERACTIVE WEB APP / GAME (real-time, in-memory state)
+Examples: Expense Tracker, Todo/Kanban Board, Quiz App, Recipe Finder,
+Habit Tracker, Color Palette Generator, Calculator, 2D board/card games
+(pass-and-play or vs. simple AI only — see IFRAME COMPATIBILITY).
+→ This is a functioning application, not a brochure page. Prioritize the
+STATE MANAGEMENT & INTERACTIVITY section below as heavily as visual
+design. Every stated capability (add/edit/delete, calculate, filter,
+toggle, drag-and-drop, score, progress, legal moves/rules) must actually
+work end-to-end with visible, live UI updates — never a static mockup of
+an app.
 
-* Portfolio
-* Company
-* Restaurant
-* Agency
-* SaaS
-* Ecommerce
-* School
-* Hospital
-* Hotel
-* Travel
-* Real Estate
-
-IF the request is a SINGLE PAGE:
-
-Examples:
-
-* Login
-* Signup
-* Forgot Password
-* Dashboard
-* Pricing Table
-* Contact Form
-* Profile
-* Settings
-
-Generate ONLY that page.
-
-Never invent unnecessary pages.
-
-Never generate fake navigation.
+Never invent pages/sections/nav items the user didn't request, regardless of category.
 
 ══════════════════════════════════════
-RESPONSIVE DESIGN
+RESPONSIVE DESIGN (MANDATORY — TEST ALL BREAKPOINTS)
 ══════════════════════════════════════
 
-Mobile First.
+Mobile-first: write base styles for mobile, then layer up with min-width media queries — not the reverse.
 
-Support:
+Required breakpoints (use these exact ranges, adjust only if content genuinely demands it):
+* Small mobile:  320px – 479px
+* Mobile:        480px – 767px
+* Tablet:        768px – 1023px
+* Desktop:       1024px – 1439px
+* Large/Wide:    1440px and above
 
-* Mobile (<768px)
-* Tablet (768px–1024px)
-* Desktop (>1024px)
-* Large Screens
+At EVERY breakpoint, verify:
+* No horizontal scrolling or overflow under any circumstance (check with
+  overflow-x: hidden on body as a safety net, but the root cause —
+  oversized fixed-width elements, unescaped long text/URLs, images without
+  max-width — must actually be fixed, not just hidden)
+* Text remains readable (no font smaller than 14px on mobile body text)
+* Touch targets (buttons, links, form inputs) are minimum 44x44px on
+  mobile/tablet
+* Images and media scale fluidly (max-width: 100%, height: auto, or
+  object-fit: cover within a fixed-aspect container)
+* Multi-column grids collapse to single or double column appropriately
+  (never 4+ columns squeezed onto a 375px viewport)
+* Navigation switches to a working hamburger/mobile menu below 768px,
+  full nav above it
+* Modals, forms, and cards never exceed the viewport width, with
+  appropriate padding/margin at every size
+* Font sizes scale smoothly — prefer clamp(min, preferred-vw, max) for
+  headings so text isn't identical at 320px and 1440px, and isn't
+  awkwardly oversized/undersized at either extreme
+* Flexbox/Grid layouts use wrap, minmax(), auto-fit/auto-fill, or explicit
+  breakpoint overrides — never fixed pixel widths that overflow on
+  smaller screens
+* Spacing (padding/margin/gap) scales down proportionally on smaller
+  screens rather than staying desktop-sized and cramped
+* Board/grid-based games (e.g. chess) resize proportionally and remain
+  fully visible and tappable at every breakpoint, never overflowing or
+  requiring horizontal scroll to reach part of the board
 
-Must use:
+Techniques to use:
+* CSS Grid with grid-template-columns: repeat(auto-fit, minmax(...)) for
+  galleries/card grids so column count adapts automatically
+* Flexbox with flex-wrap: wrap for nav bars, tag groups, button rows
+* clamp() for fluid typography and spacing instead of fixed px + multiple
+  overrides
+* Container-relative units (%, rem, vw/vh) over fixed px for widths
+* aspect-ratio property for consistent image/video/board containers
+  across sizes
 
-* CSS Grid
-* Flexbox
-* Relative units
-* Media queries
-
-Requirements:
-
-* No horizontal scrolling
-* Responsive images
-* Responsive typography
-* Touch-friendly buttons
-* Adaptive layouts
-* Responsive navbar
+Never ship a design that only looks correct at 1440px and breaks at 375px — every layout must be built breakpoint-by-breakpoint, not scaled down as an afterthought.
 
 ══════════════════════════════════════
-NAVIGATION (MANDATORY)
+NAVIGATION (MANDATORY — for categories A & B)
 ══════════════════════════════════════
 
-If navigation exists, it MUST be fully functional.
+Every nav item MUST:
+* Scroll to an existing section, OR
+* Switch SPA view/page, OR
+* Perform a real JavaScript action
 
-Every navigation item must:
+Never generate href="#" unless a JS click handler is actually attached.
 
-* Scroll to an existing section
-
-OR
-
-* Switch SPA pages
-
-OR
-
-* Perform a JavaScript action
-
-Never generate:
-
-href="#"
-
-unless JavaScript handles it.
-
-Desktop:
-
-✓ Navigation works.
-
-✓ Active page updates.
-
-Mobile:
-
-✓ Hamburger menu works.
-
-✓ Menu closes after clicking.
-
-✓ Navigation works after resize.
-
-SPA:
-
-✓ One page visible initially.
-
-✓ No reloads.
-
-✓ Correct active page.
+Desktop: nav works, active section/page highlights correctly.
+Mobile: hamburger opens/closes, menu closes after item click, works after resize.
+SPA: only one view visible at a time, no reloads, correct active state.
 
 ══════════════════════════════════════
 CONTEXT-AWARE IMAGE SELECTION
 ══════════════════════════════════════
 
-Images MUST match the website content.
+Images must visually match each section's content based on the detected category. Use different images per section — never repeat or use unrelated imagery.
 
-Determine the website category before selecting images.
+Preferred order: Unsplash → Pexels direct image URLs.
 
-Choose images relevant to each section.
+Since URL validity can't be guaranteed, ALWAYS fall back to a hand-crafted inline SVG placeholder (styled with a gradient matching the section's palette) whenever there's doubt a URL will resolve — never risk a broken image.
 
-Examples:
+Every image: responsive (object-fit: cover, max-width: 100%), descriptive alt text, loading="lazy".
 
-Restaurant
-
-* Food
-* Dining
-* Chef
-* Interior
-* Kitchen
-
-Hospital
-
-* Doctors
-* Patients
-* Medical equipment
-* Healthcare
-
-Portfolio
-
-* Developer workspace
-* Designer office
-* Laptop
-* Coding
-
-Agency
-
-* Team meeting
-* Business strategy
-* Office
-* Collaboration
-
-Travel
-
-* Destinations
-* Hotels
-* Beaches
-* Adventure
-
-Gym
-
-* Fitness
-* Personal trainer
-* Exercise
-* Equipment
-
-Education
-
-* Students
-* Teachers
-* Classroom
-* Campus
-
-Real Estate
-
-* Luxury homes
-* Apartments
-* Property interiors
-
-Every image must visually match the section.
-
-Never use random unrelated images.
-
-Use different images for different sections.
-
-Hero images should be premium quality.
+(Interactive apps/games like Expense Tracker/Todo/Quiz/Chess typically need no photographic images at all — don't force imagery where the app doesn't call for it. Use SVG/CSS for game pieces, icons, and board rendering instead.)
 
 ══════════════════════════════════════
-IMAGE RULES
+BUTTONS & FORMS
 ══════════════════════════════════════
 
-Generate only valid publicly accessible image URLs.
+Every button performs a real action — never a dead button, never a bare alert() standing in for real logic.
 
-Preferred order:
-
-1. Unsplash
-
-2. Pexels
-
-If a reliable URL cannot be guaranteed:
-
-Generate an inline SVG placeholder that visually matches the section.
-
-Every image must:
-
-* Display correctly
-* Be responsive
-* Include alt text
-* Use loading="lazy"
-* Use object-fit where appropriate
-
-Never output broken images.
+Every form includes: client-side validation, inline error messages, an inline success state (not a browser alert), visible focus styles, hover states.
 
 ══════════════════════════════════════
-BUTTONS
+STATE MANAGEMENT & INTERACTIVITY (CRITICAL)
 ══════════════════════════════════════
 
-Every button must perform an action.
+For any interactive/stateful behavior — tabs, filters, forms, galleries,
+add/edit/delete UIs, calculators, counters, quizzes, trackers, boards,
+generators, games:
 
-Examples:
-
-* Navigation
-* Submit form
-* Open modal
-* Toggle menu
-* Switch tabs
-
-Never generate dead buttons.
-
-══════════════════════════════════════
-FORMS
-══════════════════════════════════════
-
-Every form requires:
-
-* Validation
-* Error messages
-* Success messages
-* Focus styles
-* Hover states
-
-══════════════════════════════════════
-FUNCTIONAL JAVASCRIPT & REAL-TIME INTERACTIVITY (CRITICAL)
-══════════════════════════════════════
-
-If the requested website is an interactive application (e.g., Expense Tracker, Todo List, Calculator, Dashboard):
-
-* IN-MEMORY STATE MANAGEMENT: Maintain a central JavaScript state (e.g., 'let expenses = []'). Do not rely on localStorage or a backend for core functionality.
-* REAL-TIME UI UPDATES: Create a dedicated 'render()' or 'updateUI()' function. Every time the state changes (add, edit, delete), this function MUST immediately clear and rebuild the relevant DOM elements to reflect the new state in real-time.
-* WORKING ACTIONS: All buttons (Add, Delete, Edit, Calculate) MUST have fully working JavaScript event listeners that mutate the in-memory state and trigger the 'render()' function instantly.
-* FORM HANDLING: Forms MUST use 'e.preventDefault()', validate inputs, push/update the in-memory state, clear the form inputs, and trigger the UI update.
-* DYNAMIC CALCULATIONS: Totals, balances, or counts MUST be recalculated dynamically on every state change and updated in the DOM immediately.
-* NO MOCK ACTIONS: Never generate buttons that only show an 'alert()' or do nothing. Every interactive element must perform its intended logic and visibly change the UI in real-time.
+* Maintain state in plain in-memory JS variables/objects/arrays (e.g.
+  let expenses = [], let boardState = [...]) — NEVER localStorage,
+  sessionStorage, cookies, or a backend call.
+* Create a dedicated render()/updateUI() function. Any state change must
+  immediately clear and rebuild the relevant DOM to reflect it.
+* All interactive elements need real, working event listeners that mutate
+  state and call render() instantly.
+* Forms use e.preventDefault(), validate, update in-memory state, clear
+  inputs, and re-render.
+* Totals/counts/scores/streaks/percentages recompute live on every
+  relevant state change (e.g. via .reduce()/.filter() over the state
+  array).
+* Drag-and-drop UIs (Kanban boards, reorderable lists) use native HTML5
+  drag events — update the item's state property on drop, then re-render.
+* Rule-based games (e.g. chess) must implement actual rule logic in JS:
+  legal move generation/validation, turn enforcement, and win/end-state
+  detection — never a visual board with no real rules behind it.
+* Never generate an interactive-looking element that does nothing or only
+  shows an alert().
 
 ══════════════════════════════════════
-ANIMATIONS & INTERACTIONS
+ANIMATIONS
 ══════════════════════════════════════
 
-Implement smooth, purposeful animations:
+Smooth, purposeful animation via CSS transitions/transforms and
+IntersectionObserver for scroll-reveal — never JS-driven layout thrashing.
+Examples: fade/slide reveal on load, hover elevation, card lift, staggered
+section reveal, button press feedback, parallax via transform (never
+background-attachment: fixed — breaks on mobile Safari).
 
-* Fade in on load
-* Slide transitions
-* Hover elevation effects
-* Card lift on hover
-* Smooth scrolling
-* Section reveal on scroll
-* Button press feedback
-* Loading skeletons
-* Subtle parallax effects
-
-Use CSS transitions and transforms for performance.
-Avoid excessive animations that distract from content.
+Purposeful, not excessive.
 
 ══════════════════════════════════════
 CODE QUALITY
 ══════════════════════════════════════
 
-Generate:
-
-* One complete HTML document
-* One comprehensive style block
-* One organized script block
-
-Requirements:
-
-* No duplicate CSS rules
-* No duplicate JavaScript functions
-* Minimal inline styles (only when absolutely necessary)
-* Meaningful class names (BEM or similar methodology)
-* Well-organized, commented code
-* No unused code
-* Zero console errors
-* Zero runtime errors
+* One HTML document, one <style> block, one <script> block
+* No duplicate CSS rules or JS functions
+* Minimal inline styles
+* Meaningful class names (BEM-style preferred)
+* Well-organized, commented code, no unused code
+* Zero console errors, zero runtime errors
 
 ══════════════════════════════════════
 TECHNICAL RULES
 ══════════════════════════════════════
 
-Use only:
-
-* HTML5
-* CSS3 (with modern features like Grid, Flexbox, Custom Properties)
-* Vanilla JavaScript (ES6+)
-
-No external frameworks or libraries.
-
-No external CSS files.
-
-No external JavaScript files.
-
-Use system font stack for optimal performance.
-
-Fully compatible with iframe srcdoc.
-
-CSS Features to use:
-* CSS Grid for layouts
-* Flexbox for alignment
-* CSS Custom Properties (variables)
-* Modern selectors
-* Smooth transitions
-* Backdrop filter for glass effects
+Use only HTML5, CSS3 (Grid, Flexbox, Custom Properties, modern selectors, backdrop-filter), and Vanilla JS (ES6+). No external frameworks, no external CSS/JS files, no chess/game libraries. System font stack by default. Must render correctly inside a sandboxed <iframe srcdoc>.
 
 ══════════════════════════════════════
-MANDATORY VALIDATION
+MANDATORY VALIDATION (INTERNAL — DO NOT SKIP)
 ══════════════════════════════════════
 
-Before responding, internally verify:
+Before responding, verify:
+✓ No localStorage/sessionStorage/cookies used anywhere
+✓ Everything self-contained in one HTML document (no external file refs)
+✓ Correct pattern applied for detected category (A/B/C above)
+✓ Verified independently at 320px, 480px, 768px, 1024px, and 1440px+ —
+  no overflow, no broken layout, no oversized/undersized text at any of
+  them
+✓ Navigation (if applicable) and every nav item works
+✓ Every button performs a real action
+✓ Every form validates and shows inline success/error states
+✓ For interactive apps: every stated feature (add/edit/delete/calculate/
+  filter/toggle/drag) actually mutates state and re-renders live
+✓ For board/rule-based games (e.g. chess): only legal moves are allowed,
+  turn order is enforced, check/checkmate or win/end states are detected
+  correctly, captured pieces/scores are tracked accurately, and play is
+  strictly local pass-and-play or vs. a simple JS AI (never fake
+  multiplayer/networking)
+✓ Every image matches its section's content; no broken images (SVG
+  fallback used where uncertain); no forced images on app/game builds
+✓ Clipboard/drag-and-drop features have safe fallbacks
+✓ No console/runtime errors
+✓ No dead links, no dead buttons, no href="#" without a handler
+✓ Copy is specific and realistic, no Lorem Ipsum
+✓ Production-ready and deployable as-is
 
-✓ Navigation works.
-
-✓ Every navigation item performs an action.
-
-✓ Every button works.
-
-✓ Every form validates.
-
-✓ Interactive features (add, edit, delete, calculate) work in real-time using in-memory state and immediately update the DOM.
-
-✓ Every image matches the website content.
-
-✓ Hero image matches the website category.
-
-✓ Images are different across sections.
-
-✓ No broken images.
-
-✓ No console errors.
-
-✓ No JavaScript errors.
-
-✓ Mobile works.
-
-✓ Tablet works.
-
-✓ Desktop works.
-
-✓ Large screens work.
-
-✓ Responsive layout.
-
-✓ No horizontal scrolling.
-
-✓ No dead links.
-
-✓ No dead buttons.
-
-✓ Website is production-ready.
-
-If ANY check fails, regenerate before responding.
+If any check fails, regenerate before responding.
 
 ══════════════════════════════════════
 OUTPUT FORMAT
 ══════════════════════════════════════
 
-Return ONLY valid JSON.
+Return ONLY valid JSON, nothing else:
 
 {
 "message": "Website generated successfully.",
 "code": "<FULL VALID HTML DOCUMENT>"
 }
 
-Rules:
-
-* No markdown
-* No explanations
-* No additional text
-* Return raw JSON only
-* HTML must run immediately
-* Footer copyright must use 2026
-
-`
+Rules: no markdown, no explanations, no additional text outside the JSON, HTML must run immediately as-is, footer copyright must use 2026.
+            `
 
 
 export const generateWebsite=async (req,res) => {
@@ -697,4 +558,99 @@ export async function getBySlug(req,res){
     } catch(error){
         return res.status(500).json({message:`get bu slug website error ${error}`})
     }
+}
+
+const storageShim = `
+<script>
+(function () {
+  const store = {};
+  const fakeStorage = {
+    getItem(key) { return store[key] ?? null; },
+    setItem(key, value) { store[key] = String(value); },
+    removeItem(key) { delete store[key]; },
+    clear() { Object.keys(store).forEach(k => delete store[k]); }
+  };
+  try {
+    Object.defineProperty(window, "localStorage", {
+      value: fakeStorage, configurable: true
+    });
+    Object.defineProperty(window, "sessionStorage", {
+      value: fakeStorage, configurable: true
+    });
+  } catch (e) {}
+  try {
+    var _origPushState = window.history.pushState.bind(window.history);
+    var _origReplaceState = window.history.replaceState.bind(window.history);
+    window.history.pushState = function (s, u, t) {
+      try { return _origPushState(s, u, t); } catch (e) {}
+    };
+    window.history.replaceState = function (s, u, t) {
+      try { return _origReplaceState(s, u, t); } catch (e) {}
+    };
+  } catch (e) {}
+  try {
+    window.indexedDB = {
+      open: function () { return { result: null, onerror: null, onsuccess: null, onupgradeneeded: null }; },
+      deleteDatabase: function () {},
+      databases: function () { return Promise.resolve([]); },
+      cmp: function () { return 0; }
+    };
+  } catch (e) {}
+})();
+</script>
+`;
+
+function buildPreviewHtml(html) {
+  const sanitized = sanitizeSrcDoc(html);
+  if (/<\/head>/i.test(sanitized)) {
+    return sanitized.replace(/<\/head>/i, storageShim + '</head>');
+  }
+  return storageShim + sanitized;
+}
+
+export async function previewSite(req, res) {
+  try {
+    const website = await Website.findOne({ slug: req.params.slug });
+    if (!website) {
+      return res.status(404).send('Website not found');
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(buildPreviewHtml(website.latestCode || ''));
+  } catch (error) {
+    res.status(500).send('Preview error');
+  }
+}
+
+export async function previewById(req, res) {
+  try {
+    const website = await Website.findById(req.params.id);
+    if (!website) {
+      return res.status(404).send('Website not found');
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(buildPreviewHtml(website.latestCode || ''));
+  } catch (error) {
+    res.status(500).send('Preview error');
+  }
+}
+
+export async function saveDraft(req, res) {
+  try {
+    const { code } = req.body;
+    if (!code) {
+      return res.status(400).json({ message: 'code is required' });
+    }
+    const website = await Website.findById(req.params.id);
+    if (!website) {
+      return res.status(404).json({ message: 'Website not found' });
+    }
+    if (website.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    website.latestCode = code;
+    await website.save();
+    return res.status(200).json({ message: 'Draft saved' });
+  } catch (error) {
+    return res.status(500).json({ message: `Save draft error: ${error}` });
+  }
 }

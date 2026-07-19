@@ -1,6 +1,6 @@
 import express from 'express'
 import isAuth from '../middlewares/isAuth.js'
-import { changes, deploy, generateWebsite, getAll, getBySlug, getWebsiteById } from '../controllers/website.controller.js'
+import { changes, deploy, generateWebsite, getAll, getBySlug, getWebsiteById, previewById, previewSite, saveDraft } from '../controllers/website.controller.js'
 import Website from '../models/website.model.js'
 
 const websiteRouter = express.Router()
@@ -11,6 +11,9 @@ websiteRouter.get('/get-by-id/:id', isAuth, getWebsiteById)
 websiteRouter.get('/get-all', isAuth, getAll)
 websiteRouter.get('/deploy/:id', isAuth, deploy)
 websiteRouter.get('/get-by-slug/:slug', getBySlug)
+websiteRouter.get('/preview/:slug', previewSite)
+websiteRouter.get('/preview-by-id/:id', previewById)
+websiteRouter.post('/save-draft/:id', isAuth, saveDraft)
 websiteRouter.delete('/:id', isAuth, async (req, res) => {
   try {
     const website = await Website.findById(req.params.id)
