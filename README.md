@@ -1,51 +1,68 @@
 # SajiloSite
 
-SajiloSite is an AI website builder that generates modern, responsive sites using OpenRouter's Deepseek model. It includes Google authentication, user sessions, a full generation flow, and a live editor with AI-powered chat updates.
+AI website builder that generates modern, responsive sites from natural language prompts using OpenRouter's Deepseek model. Includes Google authentication, a live editor with Monaco + AI chat updates, one-click deployment, and public site viewing.
 
-## Tech stack
+---
 
-Frontend
-- React (Vite)
-- Tailwind CSS
-- Motion (`motion`)
-- Redux Toolkit
-- Firebase Auth
+## Tech Stack
 
-Backend
-- Node.js
-- Express
-- MongoDB (Mongoose)
-- JWT cookies
-- OpenRouter (Deepseek model: `deepseek/deepseek-chat`)
+**Frontend** — React 19, Vite 8, Tailwind CSS v4, Motion (framer-motion), Redux Toolkit, Monaco Editor, Lucide React, Axios, React Router v7, Firebase Auth
+
+**Backend** — Node.js, Express 5, Mongoose 9, JWT (httpOnly cookies), CORS, OpenRouter (deepseek/deepseek-chat), serverless-http (Vercel)
+
+---
 
 ## Features
 
-- Google sign-in (Firebase Auth) with backend session cookie
-- Protected routes for dashboard and generation pages
-- User session lookup via `GET /api/user/me`
-- Modern UI with Motion animations and Tailwind styling
-- AI website generation from natural language prompts
-- Live editor with AI-powered chat updates and Monaco code editor
+- Google sign-in via Firebase Auth popup/redirect with backend JWT session cookie
+- Protected routes for Dashboard, Generate, and Editor pages
+- AI website generation from natural language prompts (with animated progress states)
+- Example prompts on the Generate page for quick inspiration
+- Live editor with Monaco code editor, auto-save draft, and AI-powered chat updates (with pause/cancel/resume)
+- Conversation history per website (user/AI messages)
 - One-click deployment with unique slug URLs
-- Dashboard with grid/list views, search, sort, and deploy controls
+- Dashboard with grid/list views, search, sort (updated, created, title), stats, deploy, copy link, and delete
+- Public live site viewing at `/site/:slug`
+- Raw HTML preview endpoints (iframe-ready with localStorage/sessionStorage shim)
+- Vercel deployment support (client SPA + serverless handler)
 
-## Repository structure
+---
+
+## Project Structure
 
 ```
-client/   # React app (Vite)
-server/   # Express API
+client/          # React app (Vite)
+  src/
+    components/  # LoginModal
+    hooks/       # useGetCurrentUser
+    pages/       # Home, Dashboard, Generate, Editor, LiveSite
+    redux/       # store, userSlice
+    utils/       # srcdoc (iframe sandbox shims)
+    config.js    # server URL
+    firebase.js  # Firebase client init
+server/          # Express API
+  api/           # Vercel serverless handler
+  config/        # db, firebase, openRouter
+  controllers/   # auth, user, website
+  middlewares/    # isAuth (JWT)
+  models/        # user, website
+  routes/        # auth, user, website
+  scripts/       # utility scripts
+  utils/         # extractJson
 ```
+
+---
 
 ## Requirements
 
-- Node.js 18+ recommended
+- Node.js 18+
 - MongoDB connection string (Atlas or local)
-- Firebase project (Web app) for Google auth
+- Firebase project (Web app) for Google authentication
 - OpenRouter API key
 
-## Environment variables
+---
 
-Create `.env` files in both `client` and `server`.
+## Environment Variables
 
 ### server/.env
 
@@ -54,6 +71,8 @@ PORT=5000
 MONGODB_URL=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 OPENROUTER_API_KEY=your_openrouter_api_key
+FRONTEND_URL=http://localhost:5173
+LIVE_SITE_URL=http://localhost:5173
 ```
 
 ### client/.env
@@ -63,77 +82,86 @@ VITE_SERVER_URL=http://localhost:5000
 VITE_FIREBASE_API_KEY=your_firebase_api_key
 ```
 
-Note: Firebase project details are currently hardcoded in [client/src/firebase.js](client/src/firebase.js).
+> Firebase project config is partially hardcoded in `client/src/firebase.js` and `server/config/firebase.js`.
+
+---
 
 ## Setup
 
-### 1) Install dependencies
-
-```
-# API
+```bash
+# Install server dependencies
 cd server
 npm install
 
-# Web
+# Install client dependencies
 cd ../client
 npm install
 ```
 
-### 2) Run locally (two terminals)
+## Run Locally (two terminals)
 
-```
-# API
+```bash
+# Terminal 1 — API
 cd server
-npm run dev
-```
+npm run dev        # starts on http://localhost:5000
 
-```
-# Web
+# Terminal 2 — Client
 cd client
-npm run dev
+npm run dev        # starts on http://localhost:5173
 ```
 
-The client defaults to `http://localhost:5173`. The API defaults to `http://localhost:5000`.
+---
 
 ## Scripts
 
-Client (Vite) in [client/package.json](client/package.json)
-- `npm run dev` - start dev server
-- `npm run build` - production build
-- `npm run preview` - preview production build
-- `npm run lint` - ESLint
+| Directory | Script | Description |
+|-----------|--------|-------------|
+| client | `npm run dev` | Start Vite dev server |
+| client | `npm run build` | Production build |
+| client | `npm run preview` | Preview production build |
+| client | `npm run lint` | ESLint |
+| server | `npm run dev` | Start Express with nodemon |
 
-Server (Express) in [server/package.json](server/package.json)
-- `npm run dev` - start API with nodemon
+---
 
-## API routes
+## API Routes
 
 ### Auth
-- `POST /api/auth/google` - Google login / signup
-- `GET /api/auth/logout` - Clear auth cookie
+| Method | Route | Description |
+|--------|-------|-------------|
+| POST | `/api/auth/google` | Google login / signup |
+| GET | `/api/auth/logout` | Clear auth cookie |
 
 ### User
-- `GET /api/user/me` - Get current user (requires auth)
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/api/user/me` | Get current user (requires auth) |
 
-### Website generation (all require auth)
-- `POST /api/website/generate` - Generate a website from a prompt
-- `POST /api/website/update/:id` - Update website via AI chat
-- `GET /api/website/get-by-id/:id` - Get a single website
-- `GET /api/website/get-all` - Get all user websites
-- `GET /api/website/deploy/:id` - Deploy website (generates slug URL)
-- `GET /api/website/get-by-slug/:slug` - Get a deployed website by slug (public)
-- `DELETE /api/website/:id` - Delete a website
+### Website (most require auth)
+| Method | Route | Description |
+|--------|-------|-------------|
+| POST | `/api/website/generate` | Generate website from prompt |
+| POST | `/api/website/update/:id` | Update website via AI chat |
+| GET | `/api/website/get-by-id/:id` | Get single website |
+| GET | `/api/website/get-all` | Get all user websites |
+| GET | `/api/website/deploy/:id` | Deploy (generates slug URL) |
+| GET | `/api/website/get-by-slug/:slug` | Get deployed site by slug (public) |
+| GET | `/api/website/preview/:slug` | Preview raw HTML by slug (public) |
+| GET | `/api/website/preview-by-id/:id` | Preview raw HTML by ID |
+| POST | `/api/website/save-draft/:id` | Save code draft |
+| DELETE | `/api/website/:id` | Delete website |
 
-## OpenRouter model
+---
 
-The backend uses OpenRouter with the Deepseek model:
+## AI Model
 
-```
-const model = "deepseek/deepseek-chat";
-```
+Uses OpenRouter with `deepseek/deepseek-chat`. Configuration is in `server/config/openRouter.js`. The system prompt enforces raw JSON output with full HTML documents that render inside sandboxed iframes.
 
-See [server/config/openRouter.js](server/config/openRouter.js) for request configuration.
+---
 
-## Project status
+## Deployment
 
-Complete. The full AI website generation flow — prompt-based generation, iterative chat updates, Monaco code editing, one-click deployment, and public site viewing — is implemented and functional.
+Both client and server include Vercel configuration:
+
+- **Client** — `client/vercel.json` (SPA rewrites to `index.html`)
+- **Server** — `server/vercel.json` + `server/api/index.js` (serverless handler with connection caching)
