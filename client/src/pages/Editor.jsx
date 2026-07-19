@@ -11,10 +11,10 @@ import {
   Trash2,
   Rocket,
   Check,
+  RefreshCw,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Editor from "@monaco-editor/react";
-import { sanitizeSrcDoc } from "../utils/srcdoc";
 
 
 function WebsiteEditor() {
@@ -26,7 +26,6 @@ function WebsiteEditor() {
   const [code, setCode] = useState("");
   const [messages, setMessages] = useState([]);
   const [prompt, setPrompt] = useState("");
-  const iframeRef = useRef(null);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [analysisState, setAnalysisState] = useState("idle");
   const [analysisProgress, setAnalysisProgress] = useState(0);
@@ -36,9 +35,11 @@ function WebsiteEditor() {
   const [showChat, setShowChat] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [previewKey, setPreviewKey] = useState(0);
   const activePromptRef = useRef("");
   const abortControllerRef = useRef(null);
   const progressRef = useRef(null);
+  const saveTimerRef = useRef(null);
 
   const thinkingSteps = [
     "Understanding your request...",
@@ -111,7 +112,9 @@ function WebsiteEditor() {
       setAnalysisState("idle");
       setUpdateLoading(false);
       setMessages((m) => [...m, { role: "ai", content: result.data.message }]);
-      setCode(formatCode(result.data.code));
+      const formatted = formatCode(result.data.code);
+      setCode(formatted);
+      setPreviewKey(k => k + 1);
       activePromptRef.current = "";
     } catch (error) {
       if (controller.signal.aborted || error.code === "ERR_CANCELED") {
@@ -139,6 +142,28 @@ const handleDeploy = async () => {
     console.log(error)
   }
 }
+
+  const saveCode = async (codeToSave) => {
+    try {
+      await axios.post(`${serverUrl}/api/website/save-draft/${id}`,
+        { code: codeToSave },
+        { withCredentials: true }
+      );
+      setPreviewKey(k => k + 1);
+    } catch (e) {
+      console.log('Auto-save failed:', e);
+    }
+  };
+
+  const debouncedSave = (newCode) => {
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => saveCode(newCode), 800);
+  };
+
+  const handleCodeChange = (newCode) => {
+    setCode(newCode);
+    debouncedSave(newCode);
+  };
 
   const handleCopy = async () => {
     if (website?.deployedUrl) {
@@ -213,15 +238,6 @@ const handleDeploy = async () => {
     };
     handleGetWebsite();
   }, [id]);
-
-  useEffect(() => {
-    if (!iframeRef.current || !code) return;
-    const previewCode = sanitizeSrcDoc(code)
-    const blob = new Blob([previewCode], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    iframeRef.current.src = url;
-    return () => URL.revokeObjectURL(url);
-  }, [code]);
 
   if (error) {
     return (
@@ -365,6 +381,9 @@ const handleDeploy = async () => {
             <button className="p-2" onClick={() => setShowCode(true)}>
               <Code2 size={18} />
             </button>
+            <button className="p-2" onClick={() => setPreviewKey(k => k + 1)}>
+              <RefreshCw size={18} />
+            </button>
             <button className="p-2" onClick={() => setShowFullPreview(true)}>
               <Monitor size={18} />
             </button>
@@ -377,8 +396,9 @@ const handleDeploy = async () => {
           </div>
         </div>
 
-        <iframe ref={iframeRef} title="Editor preview" sandbox='allow-scripts allow-same-origin allow-forms'
-         className="flex-1 w-full bg-white"/>
+        <iframe key={previewKey} title="Editor preview" sandbox='allow-scripts allow-same-origin allow-forms'
+         className="flex-1 w-full bg-white"
+         src={`${serverUrl}/api/website/preview-by-id/${id}`} />
       </div>
 
       {/* Mobile Chat Modal */}
@@ -496,7 +516,7 @@ const handleDeploy = async () => {
                 theme="vs-dark"
                 value={code}
                 language="html"
-                onChange={(v) => setCode(v || "")}
+                onChange={(v) => handleCodeChange(v || "")}
                 options={{
                   automaticLayout: true,
                   minimap: { enabled: false },
@@ -515,8 +535,9 @@ const handleDeploy = async () => {
       <AnimatePresence>
         {showFullPreview && (
           <motion.div className="fixed inset-0 z-9999 bg-black">
-            <iframe title="Full preview" className="w-full h-full bg-white" srcDoc={sanitizeSrcDoc(code)}
-            sandbox='allow-scripts allow-same-origin allow-forms' />
+            <iframe title="Full preview" className="w-full h-full bg-white"
+            sandbox='allow-scripts allow-same-origin allow-forms'
+            src={`${serverUrl}/api/website/preview-by-id/${id}?fp=${previewKey}`} />
             <button
               onClick={() => setShowFullPreview(false)}
               className="absolute top-4 right-10 p-2 bg-black/70 rounded-lg"

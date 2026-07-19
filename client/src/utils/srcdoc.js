@@ -45,6 +45,26 @@ const storageShim = `
       configurable: true
     });
   } catch (e) {}
+
+  try {
+    var _origPushState = window.history.pushState.bind(window.history);
+    var _origReplaceState = window.history.replaceState.bind(window.history);
+    window.history.pushState = function (s, u, t) {
+      try { return _origPushState(s, u, t); } catch (e) {}
+    };
+    window.history.replaceState = function (s, u, t) {
+      try { return _origReplaceState(s, u, t); } catch (e) {}
+    };
+  } catch (e) {}
+
+  try {
+    window.indexedDB = {
+      open: function () { return { result: null, onerror: null, onsuccess: null, onupgradeneeded: null }; },
+      deleteDatabase: function () {},
+      databases: function () { return Promise.resolve([]); },
+      cmp: function () { return 0; }
+    };
+  } catch (e) {}
 })();
 </script>
 `;

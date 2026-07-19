@@ -559,3 +559,98 @@ export async function getBySlug(req,res){
         return res.status(500).json({message:`get bu slug website error ${error}`})
     }
 }
+
+const storageShim = `
+<script>
+(function () {
+  const store = {};
+  const fakeStorage = {
+    getItem(key) { return store[key] ?? null; },
+    setItem(key, value) { store[key] = String(value); },
+    removeItem(key) { delete store[key]; },
+    clear() { Object.keys(store).forEach(k => delete store[k]); }
+  };
+  try {
+    Object.defineProperty(window, "localStorage", {
+      value: fakeStorage, configurable: true
+    });
+    Object.defineProperty(window, "sessionStorage", {
+      value: fakeStorage, configurable: true
+    });
+  } catch (e) {}
+  try {
+    var _origPushState = window.history.pushState.bind(window.history);
+    var _origReplaceState = window.history.replaceState.bind(window.history);
+    window.history.pushState = function (s, u, t) {
+      try { return _origPushState(s, u, t); } catch (e) {}
+    };
+    window.history.replaceState = function (s, u, t) {
+      try { return _origReplaceState(s, u, t); } catch (e) {}
+    };
+  } catch (e) {}
+  try {
+    window.indexedDB = {
+      open: function () { return { result: null, onerror: null, onsuccess: null, onupgradeneeded: null }; },
+      deleteDatabase: function () {},
+      databases: function () { return Promise.resolve([]); },
+      cmp: function () { return 0; }
+    };
+  } catch (e) {}
+})();
+</script>
+`;
+
+function buildPreviewHtml(html) {
+  const sanitized = sanitizeSrcDoc(html);
+  if (/<\/head>/i.test(sanitized)) {
+    return sanitized.replace(/<\/head>/i, storageShim + '</head>');
+  }
+  return storageShim + sanitized;
+}
+
+export async function previewSite(req, res) {
+  try {
+    const website = await Website.findOne({ slug: req.params.slug });
+    if (!website) {
+      return res.status(404).send('Website not found');
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(buildPreviewHtml(website.latestCode || ''));
+  } catch (error) {
+    res.status(500).send('Preview error');
+  }
+}
+
+export async function previewById(req, res) {
+  try {
+    const website = await Website.findById(req.params.id);
+    if (!website) {
+      return res.status(404).send('Website not found');
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(buildPreviewHtml(website.latestCode || ''));
+  } catch (error) {
+    res.status(500).send('Preview error');
+  }
+}
+
+export async function saveDraft(req, res) {
+  try {
+    const { code } = req.body;
+    if (!code) {
+      return res.status(400).json({ message: 'code is required' });
+    }
+    const website = await Website.findById(req.params.id);
+    if (!website) {
+      return res.status(404).json({ message: 'Website not found' });
+    }
+    if (website.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    website.latestCode = code;
+    await website.save();
+    return res.status(200).json({ message: 'Draft saved' });
+  } catch (error) {
+    return res.status(500).json({ message: `Save draft error: ${error}` });
+  }
+}
