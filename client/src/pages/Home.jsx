@@ -316,7 +316,7 @@ function Home() {
         )}
 
         <footer className = 'border-t border-white/10 py-10 text-center text-sm text-zinc-500' >
-            &copy;{new Date().getFullYear()} SajiloSite. Built with AI.
+            &copy;{new Date().getFullYear()} SajiloSite. Kathmandu University
         </footer>
 
         <LoginModal open={openLogin} onClose={() => setOpenLogin(false)} />

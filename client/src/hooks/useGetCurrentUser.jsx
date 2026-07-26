@@ -36,13 +36,32 @@ function useGetCurrentUser() {
                         { withCredentials: true })
                     dispatch(setUserData(result.data))
                 } catch (error) {
-                    console.log("Backend unreachable, using Firebase user:", error.message)
-                    dispatch(setUserData({
-                        name: firebaseUser.displayName,
-                        email: firebaseUser.email,
-                        avatar: firebaseUser.photoURL,
-                        uid: firebaseUser.uid
-                    }))
+                    if (error?.response?.status === 401) {
+                        try {
+                            const { data } = await axios.post(`${serverUrl}/api/auth/google`, {
+                                name: firebaseUser.displayName,
+                                email: firebaseUser.email,
+                                avatar: firebaseUser.photoURL,
+                                uid: firebaseUser.uid
+                            }, { withCredentials: true })
+                            dispatch(setUserData(data.user))
+                        } catch (retryError) {
+                            console.log("Backend unreachable, using Firebase user:", retryError.message)
+                            dispatch(setUserData({
+                                name: firebaseUser.displayName,
+                                email: firebaseUser.email,
+                                avatar: firebaseUser.photoURL,
+                                uid: firebaseUser.uid
+                            }))
+                        }
+                    } else {
+                        dispatch(setUserData({
+                            name: firebaseUser.displayName,
+                            email: firebaseUser.email,
+                            avatar: firebaseUser.photoURL,
+                            uid: firebaseUser.uid
+                        }))
+                    }
                 }
                 setLoading(false)
                 return
