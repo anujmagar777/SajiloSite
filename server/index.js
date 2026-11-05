@@ -1,5 +1,7 @@
 import app from './app.js'
 import connectDb from './config/db.js'
+import cors from 'cors';
+app.use(cors());
 
 const port = process.env.PORT || 5000
 

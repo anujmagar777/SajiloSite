@@ -1,0 +1,22 @@
+services:
+
+  server:
+   build: ./server
+   ports:
+    - "8000:8000"
+   env_file:
+    - ./server/.env
+
+  client:
+   build: ./client
+   ports:
+    - "5173:80"
+   env_file:
+    - ./client/.env
+   environment:
+    - VITE_SERVER_URL=http://localhost:8000
+   depends_on:
+    - server
+     
+
+   
